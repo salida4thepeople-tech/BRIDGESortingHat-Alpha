@@ -1,0 +1,783 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>BRIDGE Sorting Hat</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#e8f0e1;--primary:#4a7c3f;--secondary:#2d5a27;--card-bg:#ffffff;--accent:#f5f5eb;--text:#1a1a1a;--handle-color:#888;--radius:8px;--shadow:0 2px 8px rgba(0,0,0,0.12);}
+html{scroll-behavior:smooth}body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}.container{max-width:860px;margin:0 auto;padding:16px}
+h1{font-size:clamp(1.6rem,4vw,2.4rem);color:var(--secondary);margin-bottom:8px;text-align:center;}.subtitle{text-align:center;color:#555;margin-bottom:32px;font-size:1.05rem}
+.section-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);padding:24px;margin-bottom:32px;}
+.section-title{font-size:1.4rem;color:var(--secondary);margin-bottom:8px;border-bottom:2px solid var(--primary);padding-bottom:8px;}.section-desc{font-size:0.95rem;color:#555;margin-bottom:24px}
+.question-block{margin-bottom:32px}.question-title{font-size:1.1rem;font-weight:700;color:var(--primary);margin-bottom:4px;}
+.scenario-text{font-size:0.95rem;background:var(--accent);border-left:4px solid var(--primary);padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:8px;font-style:italic;}
+.instruction-text{font-size:0.9rem;color:#555;margin-bottom:12px}
+.drag-list{list-style:none;display:flex;flex-direction:column;gap:6px;min-height:48px;}
+.drag-item{display:flex;align-items:center;gap:10px;background:var(--card-bg);border:1.5px solid #d0dcc8;border-radius:var(--radius);padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.07);cursor:default;user-select:none;touch-action:none;min-height:56px;transition:box-shadow 0.15s,border-color 0.15s;position:relative;}
+.drag-item:focus{outline:3px solid var(--primary);outline-offset:2px;border-color:var(--primary);}.drag-item.dragging{opacity:0;}
+.drag-handle{font-size:1.3rem;color:var(--handle-color);cursor:grab;flex-shrink:0;touch-action:none;padding:4px;border-radius:4px;line-height:1;display:flex;align-items:center;}.drag-handle:active{cursor:grabbing}
+.rank-badge{background:var(--primary);color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;}.item-text{flex:1;font-size:0.95rem}
+.move-btns{display:flex;flex-direction:column;gap:3px;flex-shrink:0;}.move-btn{background:var(--accent);border:1.5px solid #c0ccc0;border-radius:5px;width:32px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:var(--secondary);transition:background 0.12s;touch-action:manipulation;}
+.move-btn:hover,.move-btn:focus{background:var(--primary);color:#fff;border-color:var(--primary);outline:none;}.move-btn:disabled{opacity:0.35;cursor:not-allowed}
+.drag-placeholder{border:2px dashed var(--primary);border-radius:var(--radius);background:rgba(74,124,63,0.07);pointer-events:none;}
+.drag-clone{position:fixed;z-index:9999;pointer-events:none;opacity:0.92;box-shadow:0 8px 24px rgba(0,0,0,0.22);border-radius:var(--radius);background:var(--card-bg);border:2px solid var(--primary);}
+.checkbox-group{display:flex;flex-direction:column;gap:12px;}.checkbox-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:var(--radius);border:1.5px solid #d0dcc8;background:var(--card-bg);cursor:pointer;transition:border-color 0.12s,background 0.12s;min-height:56px;}
+.checkbox-item:hover,.checkbox-item:focus-within{border-color:var(--primary);background:var(--accent);}.checkbox-item input[type=checkbox]{width:22px;height:22px;accent-color:var(--primary);cursor:pointer;flex-shrink:0;margin-top:2px;}
+.checkbox-label-text{font-size:0.95rem;font-weight:600}.checkbox-label-sub{font-size:0.85rem;color:#666;display:block;margin-top:2px;font-weight:400}
+.submit-btn{display:block;width:100%;max-width:360px;margin:0 auto 40px;padding:16px 24px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);font-size:1.1rem;font-weight:700;cursor:pointer;transition:background 0.15s,transform 0.1s;min-height:56px;}
+.submit-btn:hover{background:var(--secondary)}.submit-btn:focus{outline:3px solid var(--secondary);outline-offset:3px}.submit-btn:active{transform:scale(0.98)}
+.validation-msg{color:#c0392b;background:#fdecea;border:1.5px solid #e57373;border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:0.95rem;display:none;}.validation-msg.show{display:block}
+#results{display:none}.results-header{text-align:center;margin-bottom:32px;}.results-header h2{font-size:1.8rem;color:var(--secondary);margin-bottom:8px;}
+.archetype-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:32px;}.archetype-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);padding:20px;border-top:4px solid var(--primary);}
+.archetype-card.rank1{border-top-color:#4a7c3f}.archetype-card.rank2{border-top-color:#7aaa6e}.archetype-card.rank3{border-top-color:#a8cc9e}
+.archetype-name{font-size:1.15rem;font-weight:700;color:var(--secondary);margin-bottom:4px;}.archetype-rank-label{font-size:0.78rem;font-weight:600;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em}
+.archetype-meta{font-size:0.88rem;color:#555}.archetype-meta dt{font-weight:700;color:var(--primary);margin-top:8px}.archetype-meta dd{margin-left:0;margin-top:2px}
+.score-bar-wrap{margin-top:10px}.score-bar-bg{background:#e0e8da;border-radius:6px;height:12px;overflow:hidden;margin-top:4px;}.score-bar-fill{background:var(--primary);height:100%;border-radius:6px;transition:width 0.8s ease;}.score-label{font-size:0.82rem;color:#555;margin-top:3px}
+.vol-card{background:var(--card-bg);border-radius:12px;box-shadow:var(--shadow);padding:20px;border-top:4px solid #7aaa6e;margin-bottom:24px;}.vol-card-name{font-size:1.2rem;font-weight:700;color:var(--secondary);margin-bottom:10px}
+.vol-meta{font-size:0.9rem;color:#555}.vol-meta dt{font-weight:700;color:var(--primary);margin-top:8px}.vol-meta dd{margin-left:0;margin-top:2px}
+.orgs-section{margin-bottom:32px}.orgs-section h3{font-size:1.3rem;color:var(--secondary);margin-bottom:16px;border-bottom:2px solid var(--primary);padding-bottom:8px;}
+.org-cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}.org-card{background:var(--card-bg);border-radius:10px;box-shadow:var(--shadow);padding:18px;border-left:4px solid var(--primary);display:flex;flex-direction:column;gap:6px;}
+.org-name{font-size:1.05rem;font-weight:700;color:var(--secondary);}.org-overlap-badge{display:inline-block;background:var(--primary);color:#fff;border-radius:12px;padding:2px 10px;font-size:0.78rem;font-weight:700;margin-bottom:4px;}
+.org-field{font-size:0.88rem;color:#555;margin-top:4px}.org-field strong{color:var(--text);display:block;margin-bottom:2px}.org-contact{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.org-contact a{color:var(--primary);text-decoration:none;font-size:0.88rem;font-weight:600;}.org-contact a:hover{text-decoration:underline}
+.accordion-wrap{margin-top:8px}.accordion-btn{width:100%;background:var(--accent);border:2px solid var(--primary);border-radius:var(--radius);padding:14px 20px;font-size:1rem;font-weight:700;color:var(--secondary);cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;min-height:52px;transition:background 0.12s;}
+.accordion-btn:hover,.accordion-btn:focus{background:var(--primary);color:#fff;outline:none}.accordion-content{display:none;margin-top:12px}.accordion-content.open{display:block}.accordion-arrow{font-size:1.1rem;transition:transform 0.2s;display:inline-block}
+.restart-btn{display:block;width:100%;max-width:300px;margin:24px auto 40px;padding:14px 24px;background:var(--accent);color:var(--secondary);border:2px solid var(--primary);border-radius:var(--radius);font-size:1rem;font-weight:700;cursor:pointer;min-height:52px;transition:background 0.12s;}.restart-btn:hover,.restart-btn:focus{background:var(--primary);color:#fff;outline:none}
+@media(max-width:600px){.section-card{padding:16px}.archetype-grid{grid-template-columns:1fr}.org-cards-grid{grid-template-columns:1fr}}
+.result-card{background:var(--card-bg);border-radius:10px;box-shadow:var(--shadow);padding:20px;margin-bottom:16px;border-left:4px solid var(--primary);}
+.result-card-header{display:flex;align-items:center;gap:12px;margin-bottom:8px;}.result-rank{background:var(--primary);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0;}
+.result-card h4{font-size:1.15rem;color:var(--secondary);margin:0;}.archetype-tagline{font-size:0.88rem;color:var(--primary);font-weight:600;margin-bottom:6px;}.archetype-desc{font-size:0.9rem;color:#555;margin-bottom:6px;}.activation{font-size:0.9rem;margin-top:8px;color:var(--secondary);}
+.score-bar-wrap{background:#e0e8da;border-radius:6px;height:12px;overflow:hidden;margin:8px 0 4px;}.score-bar{background:var(--primary);height:100%;border-radius:6px;transition:width 0.8s ease;}.vol-bar{background:var(--secondary);}
+.result-card-vol{border-left-color:var(--secondary);}.result-subtitle{font-size:0.9rem;color:#666;margin-bottom:16px;}
+.match-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;letter-spacing:0.02em;}
+.badge-phil{background:#d4edda;color:#1a5c2e;}.badge-area{background:#d0e8ff;color:#1a3c6e;}.badge-vol{background:#fff3cd;color:#7d4e00;}
+.org-card h4{font-size:1rem;color:var(--secondary);margin-bottom:6px;}.org-card-header{margin-bottom:8px;}.org-desc{font-size:0.88rem;color:#444;margin-bottom:4px;font-style:italic;}
+.org-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}.org-links a{color:var(--primary);text-decoration:none;font-size:0.88rem;padding:4px 10px;border:1px solid var(--primary);border-radius:20px;transition:background 0.12s;}.org-links a:hover,.org-links a:focus{background:var(--primary);color:#fff;}
+</style>
+<div aria-live="polite" class="sr-only" id="liveRegion"></div>
+<div class="container">
+<header><h1>BRIDGE Sorting Hat</h1><p class="subtitle">Discover your philosophical archetype, volunteer style, and find community organizations that match your strengths.</p></header>
+<div id="formSection">
+<div class="validation-msg" id="validationMsg" role="alert"></div>
+<form id="mainForm" novalidate>
+<div class="section-card">
+<h2 class="section-title">Section 1: Philosophical Archetype</h2>
+<p class="section-desc">For each scenario, rank the five responses from most natural (top) to least natural (bottom). Drag to reorder, or use the arrow buttons.</p>
+<div class="question-block">
+<div class="question-title">Scenario 1</div>
+<div class="scenario-text">My winter electric bill is higher than I expected, and I can&#39;t pay it before the shutoff date. I work full-time, but with rent and groceries going up, I fell behind, and I&#39;m hoping someone knows about something I don&#39;t.</div>
+<div class="instruction-text">Rank the top five response(s) below with what feels most natural for you</div>
+<ul class="drag-list phil-list" id="phil-q1" role="listbox" aria-label="Scenario 1 ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1" aria-label="Option 1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Rally neighbors, faith groups, or mutual aid networks to cover part of the bill while organizing a small bulk energy-saving effort.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2" aria-label="Option 2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Share cost-saving practices that have worked before while organizing volunteers and tracking assistance deadlines.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3" aria-label="Option 3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Ensure renters, elders, and low-income households know their rights while protecting choice and dignity in negotiations.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4" aria-label="Option 4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Examine rate structures and assistance programs to identify where policy is failing working households.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5" aria-label="Option 5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Offer budgeting tools or energy-saving strategies without shame while strengthening community support networks.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Scenario 2</div>
+<div class="scenario-text">My eleven-year-old gets out of school an hour before I&#39;m off work, and I don&#39;t have family nearby to help. I&#39;m trying to keep my job, but I&#39;m scared of leaving them alone, so I&#39;m looking for an affordable after-school option, but no one wants to work for just one hour four days a week.</div>
+<div class="instruction-text">Rank the top five response(s) below with what feels most natural for you</div>
+<ul class="drag-list phil-list" id="phil-q2" role="listbox" aria-label="Scenario 2 ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Start a rotating childcare pod or shared after-school hour hosted in trusted community spaces.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Ask trusted community members to help in small, defined roles and set up a clear plan.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Advocate for inclusive options so children with different needs are not excluded.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Highlight workforce and childcare system gaps affecting rural families.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Support teens or community members in gaining childcare skills for paid opportunities.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Societal Priorities</div>
+<div class="scenario-text">Much like our personal focuses, our beliefs in what society should focus on guide how we act. What do you believe our community should prioritize first?</div>
+<div class="instruction-text">Rank the top five Societal Priorities below by what feels most natural for you</div>
+<ul class="drag-list phil-list" id="phil-q3" role="listbox" aria-label="Societal Priorities ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Strengthening local interdependence</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Preserving community knowledge</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Protecting the most vulnerable</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Strengthening public systems</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Growing leadership capacity</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Personal Struggles</div>
+<div class="scenario-text">In community work, we all carry habits that can limit connection. Which of these patterns do you recognize in yourself?</div>
+<div class="instruction-text">Rank the top five of your personal opportunities from most to least familiar.</div>
+<ul class="drag-list phil-list" id="phil-q4" role="listbox" aria-label="Personal Struggles ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Taking on too much responsibility</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Clinging to familiar methods too long</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Holding standards so tightly that collaboration becomes difficult</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Getting lost in analysis</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Assuming fairness where hidden advantages exist</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Natural Tendencies</div>
+<div class="scenario-text">When an issue arises, we often default to our natural state. Select the most common roles you fall into.</div>
+<div class="instruction-text">Rank the top five of your natural tendencies from most to least familiar.</div>
+<ul class="drag-list phil-list" id="phil-q5" role="listbox" aria-label="Natural Tendencies ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Build small networks that can connect to larger ones</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Create systems for follow-through</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Notice who is missing</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Map entire systems before acting</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Teach and guide</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Desired Entry Point</div>
+<div class="scenario-text">We are often waiting for permission or an invitation to join the work. What would help you feel ready to step up?</div>
+<div class="instruction-text">Rank the top five invitations to mutual aid that call you most to least.</div>
+<ul class="drag-list phil-list" id="phil-q6" role="listbox" aria-label="Desired Entry Point ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Help build something tangible with others</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Be given a defined task with a beginning and end</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Translate policy into accessible action</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Help build scalable infrastructure</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Have a clear mentoring role</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Activation</div>
+<div class="scenario-text">Which words most energize you into action?</div>
+<div class="instruction-text">Identify the magic words that activate you into action from most compelling to least compelling.</div>
+<ul class="drag-list phil-list" id="phil-q7" role="listbox" aria-label="Activation ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Let&#39;s build this together.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Let&#39;s make a clear plan.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Let&#39;s make sure we don&#39;t leave anyone behind.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Let&#39;s map the whole system.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">How can we help people succeed?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+</div>
+<div class="section-card">
+<h2 class="section-title">Section 2: Volunteer Style Archetype</h2>
+<p class="section-desc">For each question, rank all ten options from most like you (top) to least like you (bottom). Drag to reorder or use arrow buttons.</p>
+<div class="question-block">
+<div class="question-title">Your Superpowers</div>
+<div class="instruction-text">Some things that are easy for us, seem difficult for others. Which of these comes naturally to you? Identify the superpowers you identify the most with.</div>
+<ul class="drag-list vol-list" id="vol-q1" role="listbox" aria-label="Superpowers ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Keeps lists, schedules, sign-ups, reminders.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Shows up with tools, trucks, carpentry skills, tech help.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Emotional support, check-ins, meals, rides.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Knows everyone. Shares posts, brings partners together.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Understands rules, grants, labor law, Medicaid waivers.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="6"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">6</span><span class="item-text">Makes flyers, memes, murals, invitations, and posters that bring people in.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="7"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">7</span><span class="item-text">Calm under pressure, handles urgent needs.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="8"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">8</span><span class="item-text">Reliable, humble, does work without needing credit.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="9"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">9</span><span class="item-text">(not listed)</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="10"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">10</span><span class="item-text">Dreams up programs and envisions a new path.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Personal Kryptonite</div>
+<div class="instruction-text">Our strengths can also be our Kryptonite. Identify the obstacles that have slowed or stressed yourself and others.</div>
+<ul class="drag-list vol-list" id="vol-q2" role="listbox" aria-label="Personal Kryptonite ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Over-structuring and slowing things down</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Focusing only on tasks, and forgetting relationships</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Burning out because of emotional burden</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Overpromising or spreading self too thin</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Getting stuck in paperwork or pessimism</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="6"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">6</span><span class="item-text">Logistics may drain you.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="7"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">7</span><span class="item-text">Responding only for crisis</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="8"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">8</span><span class="item-text">Getting overlooked</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="9"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">9</span><span class="item-text">(not listed)</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="10"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">10</span><span class="item-text">Planning and follow through may drain you.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Social Dynamics</div>
+<div class="instruction-text">When asked to volunteer, what questions are you most likely to ask? Rank the social dynamics you feel most to least comfortable with.</div>
+<ul class="drag-list vol-list" id="vol-q3" role="listbox" aria-label="Social Dynamics ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Who's leading?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">How many people will be there?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Will we meet first?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Can my friend come?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Have we checked if someone is already doing something?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="6"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">6</span><span class="item-text">Can I team up with organizers to understand projects, events, and advertising?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="7"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">7</span><span class="item-text">Can I just take a piece of it?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="8"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">8</span><span class="item-text">Where do I drop it off?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="9"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">9</span><span class="item-text">(not listed)</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="10"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">10</span><span class="item-text">Who's with me?</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+<div class="question-block">
+<div class="question-title">Desired Entry Point</div>
+<div class="instruction-text">We are often waiting for permission or an invitation to join the work. Rank the invitation to mutual aid that calls you the most to least.</div>
+<ul class="drag-list vol-list" id="vol-q4" role="listbox" aria-label="Vol Desired Entry Point ranking">
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="1"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">1</span><span class="item-text">Help build the scaffolding so mutual aid can scale without burning people out.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="2"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">2</span><span class="item-text">Showing up with tools, trucks, carpentry skills, tech help.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="3"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">3</span><span class="item-text">Have an accountability team with boundaries so I can stay healthy.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="4"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">4</span><span class="item-text">Just focus on 1-2 networks at a time.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="5"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">5</span><span class="item-text">Translate policy into plain language action.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="6"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">6</span><span class="item-text">Team up with organizers so your creativity fuels real projects, events, and advocacy momentum.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="7"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">7</span><span class="item-text">Help build prevention systems.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="8"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">8</span><span class="item-text">Have someone check in with me and affirm I am still heading in the right direction.</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="9"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">9</span><span class="item-text">(not listed)</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+<li class="drag-item" tabindex="0" role="option" data-archetype-index="10"><span class="drag-handle" aria-hidden="true">&#x2807;</span><span class="rank-badge">10</span><span class="item-text">Pair with organizers and fixers</span><div class="move-btns"><button class="move-btn" aria-label="Move up">&#x25B2;</button><button class="move-btn" aria-label="Move down">&#x25BC;</button></div></li>
+</ul></div>
+</div>
+<div class="section-card">
+<h2 class="section-title">Section 3: Areas of Interest</h2>
+<p class="section-desc">Select at least one area where you would like to contribute or connect with community organizations.</p>
+<div class="checkbox-group" id="areasGroup" role="group" aria-label="Areas of Interest">
+<label class="checkbox-item"><input type="checkbox" name="area" value="basic-needs" aria-describedby="area1desc"><span><span class="checkbox-label-text">Basic Needs Support</span><span class="checkbox-label-sub" id="area1desc">Essentials collection and distribution: Supplies, clothing, housewares, utilities</span></span></label>
+<label class="checkbox-item"><input type="checkbox" name="area" value="ride-delivery" aria-describedby="area2desc"><span><span class="checkbox-label-text">Ride &amp; Delivery Network</span><span class="checkbox-label-sub" id="area2desc">Transportation and logistical support: Doctors appointments, rides to school or work, deliveries, and more.</span></span></label>
+<label class="checkbox-item"><input type="checkbox" name="area" value="listening-trust" aria-describedby="area3desc"><span><span class="checkbox-label-text">Listening &amp; Trust Circles</span><span class="checkbox-label-sub" id="area3desc">Spaces to listen, be heard, and build trust: Chat rooms, one on one, group gathers</span></span></label>
+<label class="checkbox-item"><input type="checkbox" name="area" value="housing" aria-describedby="area4desc"><span><span class="checkbox-label-text">Housing Connections</span><span class="checkbox-label-sub" id="area4desc">Networks to provide or access short term housing: Awareness and cultivation of resources and relationships</span></span></label>
+<label class="checkbox-item"><input type="checkbox" name="area" value="peer-support" aria-describedby="area5desc"><span><span class="checkbox-label-text">Peer Support &amp; Belonging</span><span class="checkbox-label-sub" id="area5desc">Peer networks that empower self-advocacy and belonging: Affinity groups, coalitions, chosen families, building a bigger table</span></span></label>
+<label class="checkbox-item"><input type="checkbox" name="area" value="food-sharing" aria-describedby="area6desc"><span><span class="checkbox-label-text">Community Food Sharing</span><span class="checkbox-label-sub" id="area6desc">Community-based food sharing and distribution networks: Little Free Pantries, Food drives, Potlucks, Community Awareness</span></span></label>
+</div></div>
+<div id="area-error" role="alert" style="display:none;color:#c0392b;font-weight:600;margin-bottom:12px;padding:8px 12px;background:#ffeaea;border-radius:6px;border-left:4px solid #c0392b;">Please select at least one area of interest.</div>
+<button type="submit" class="submit-btn" id="submitBtn">See My Results</button>
+</form></div>
+<div id="drag-announce" aria-live="polite" aria-atomic="true" class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"></div>
+<div id="results">
+<div class="results-header"><h2>Your Results</h2><p>Here is what your rankings reveal about your community archetype and interests.</p></div>
+<div class="section-card">
+<h3 style="font-size:1.3rem;color:var(--secondary);margin-bottom:16px;border-bottom:2px solid var(--primary);padding-bottom:8px;">Your Philosophical Archetype</h3>
+<p style="font-size:0.9rem;color:#555;margin-bottom:16px;">Your top 3 archetypes based on your rankings:</p>
+<div class="archetype-grid" id="philResults"></div>
+</div>
+<div class="section-card">
+<h3 style="font-size:1.3rem;color:var(--secondary);margin-bottom:16px;border-bottom:2px solid var(--primary);padding-bottom:8px;">Your Volunteer Style</h3>
+<div id="volResults"></div>
+</div>
+<div class="section-card">
+<h3 style="font-size:1.3rem;color:var(--secondary);margin-bottom:16px;border-bottom:2px solid var(--primary);padding-bottom:8px;">Organizations That Match Your Profile</h3>
+<p style="font-size:0.9rem;color:#555;margin-bottom:16px;">These organizations align with your archetypes and areas of interest. Overlap score shows how closely each organization matches your full profile (0-3).</p>
+<div class="orgs-section"><h3>Top Matches</h3><div class="org-cards-grid" id="topOrgs"></div></div>
+<div class="accordion-wrap"><button class="accordion-btn" id="accordionToggle" aria-expanded="false" aria-controls="moreOrgsContent"><span>Show More Organizations (<span id="accordionCount">0</span>)</span><span class="accordion-arrow">&#x25BC;</span></button><div class="accordion-content" id="moreOrgsContent"><div class="org-cards-grid" id="remainingOrgs"></div></div></div>
+</div>
+<button class="restart-btn" id="restartBtn">Start Over</button>
+</div>
+</div>
+<script>
+// Service area detection
+function getServiceAreas(org) {
+  var c = (org.services||"") + " " + (org.circleOfInfluence||"") + " " + (org.communityImpact||"");
+  var a = [];
+  if(/basic needs|clothing.*distribut|housewares|medical equipment loan|hygiene supplies|winter shelter|essential/i.test(c)) a.push("basic-needs");
+  if(/transportation|rides to|door.to.door|meals on wheels|home.delivered|delivery|transit/i.test(c)) a.push("ride-delivery");
+  if(/support group|peer.led recovery|peer support|mental health|recovery meeting|counseling|one.on.one|check.in/i.test(c)) a.push("listening-trust");
+  if(/housing|affordable housing|shelter|homeless|rent assist|eviction|sober living/i.test(c)) a.push("housing");
+  if(/inclusion|lgbtq|belonging|affinity|coalition|chosen famil|peer network|community support/i.test(c)) a.push("peer-support");
+  if(/food pantry|food distribut|food sharing|farmers market|soup kitchen|hot meals|food bank|free pantry|community food|potluck|food drive|meal program/i.test(c)) a.push("food-sharing");
+  return a;
+}
+var PHIL_ARCHETYPES = [null,
+  {name:'Community Builder',activationPhrase:"Let's build this together.",youMightHelpBy:'Help build something tangible with others',keywords:'Strengthening local interdependence'},
+  {name:'Coordinator',activationPhrase:"Let's make a clear plan.",youMightHelpBy:'Be given a defined task with a beginning and end',keywords:'Preserving community knowledge'},
+  {name:'Guardian',activationPhrase:"Let's make sure we don't leave anyone behind.",youMightHelpBy:'Translate policy into accessible action',keywords:'Protecting the most vulnerable'},
+  {name:'Systems Strategist',activationPhrase:"Let's map the whole system.",youMightHelpBy:'Help build scalable infrastructure',keywords:'Strengthening public systems'},
+  {name:'Capacity Builder',activationPhrase:'How can we help people succeed?',youMightHelpBy:'Have a clear mentoring role',keywords:'Growing leadership capacity'}
+];
+var VOL_ARCHETYPES = [null,
+  {name:'The Coordinator',superpower:'Keeps lists, schedules, sign-ups, reminders.',kryptonite:'Over-structuring and slowing things down',invitation:'Help build the scaffolding so mutual aid can scale without burning people out.'},
+  {name:'The Fixer',superpower:'Shows up with tools, trucks, carpentry skills, tech help.',kryptonite:'Focusing only on tasks, and forgetting relationships',invitation:'Showing up with tools, trucks, carpentry skills, tech help.'},
+  {name:'The Caregiver',superpower:'Emotional support, check-ins, meals, rides.',kryptonite:'Burning out because of emotional burden',invitation:'Have an accountability team with boundaries so I can stay healthy.'},
+  {name:'The Connector',superpower:'Knows everyone. Shares posts, brings partners together.',kryptonite:'Overpromising or spreading self too thin',invitation:'Just focus on 1-2 networks at a time.'},
+  {name:'The Policy Nerd',superpower:'Understands rules, grants, labor law, Medicaid waivers.',kryptonite:'Getting stuck in paperwork or pessimism',invitation:'Translate policy into plain language action.'},
+  {name:'The Creative',superpower:'Makes flyers, memes, murals, invitations, and posters that bring people in.',kryptonite:'Logistics may drain you.',invitation:'Team up with organizers so your creativity fuels real projects, events, and advocacy momentum.'},
+  {name:'The Crisis Responder',superpower:'Calm under pressure, handles urgent needs.',kryptonite:'Responding only for crisis',invitation:'Help build prevention systems.'},
+  {name:'The Quiet Helper',superpower:'Reliable, humble, does work without needing credit.',kryptonite:'Getting overlooked',invitation:'Have someone check in with me and affirm I am still heading in the right direction.'},
+  {name:'The Skeptic',superpower:'(not listed)',kryptonite:'(not listed)',invitation:'(not listed)'},
+  {name:'The Visionary',superpower:'Dreams up programs and envisions a new path.',kryptonite:'Planning and follow through may drain you.',invitation:'Pair with organizers and fixers'}
+];
+var ORGS = [
+  {name:'Achieve Inc.',website:'https://www.achievelifeskills.org/',phone:'719-395-4006',email:'info@achievelifeskills.org',description:'Innovative opportunities for individuals with neurodivergent and mental health challenges in rural Colorado.',services:'Job and life-skills training; paid work experience; Little Engine Eatery; Brew and Bloom coffee shop; Achieve Social outings ages 14+.',communityImpact:'Provides paid work experience and job training for neurodivergent community members; builds inclusive workforce capacity.',howToContribute:'Donate; volunteer/mentor; attend events; purchase from their social enterprises; share referrals.',philosophicalArchetypes:['Capacity Builder','Equity Advocate'],volunteerStyles:['The Coordinator','The Caregiver','The Connector','The Fixer'],circleOfInfluence:'Inclusion, Community Support, Advocacy'},
+  {name:'Alcoholics Anonymous - Chaffee County',website:'https://www.coloradoaa.org',phone:'',email:'',description:'Peer-led recovery meetings for alcohol use disorder.',services:'Peer-led recovery support meetings (in-person and Zoom) and a 24-hour hotline serving Salida, Buena Vista, Leadville.',communityImpact:'Provides free, confidential mutual-aid support for individuals seeking sobriety across Chaffee County communities.',howToContribute:'Attend meetings; volunteer for service positions; share meeting/hotline info with people seeking support.',philosophicalArchetypes:['Community Builder'],volunteerStyles:['The Caregiver','The Quiet Helper','The Crisis Responder','The Coordinator'],circleOfInfluence:'Health, Well-Being, Safety, and Crisis Support'},
+  {name:'Alpine Achievers',website:'https://www.alpineachievers.org',phone:'719-850-9055',email:'admin@alpineachievers.org',description:'Alpine Achievers Initiative inspires, connects, and nurtures youth, families, and communities in rural Colorado.',services:'Youth, family, and community programs including AmeriCorps placements, Valley to Valley homeschool programming, and Alpine Adventurers outdoor programming.',communityImpact:'Strengthens youth education, mentoring, and outdoor learning; coordinates AmeriCorps members placed in schools and youth-serving organizations.',howToContribute:'Donate; apply to serve as AmeriCorps member; become a service site/partner; volunteer or sponsor youth activities.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Connector','The Coordinator','The Caregiver','The Visionary','The Policy Nerd'],circleOfInfluence:'Community Development, Philanthropy, and Collaboration'},
+  {name:'American Legion - Durable Medical Equipment Loan',website:'https://www.chaffeeresources.com/resource/american-legion-durable-medical-equipment-loan-program',phone:'719-395-8024',email:'',description:'Clothing and essentials, durable medical equipment loan service.',services:'Loans durable medical equipment (wheelchairs, hospital beds, crutches/canes, walkers, commodes) with no fee or eligibility requirements.',communityImpact:'Helps community members access temporary mobility/medical equipment quickly and at low/no cost, supporting older adults and caregivers.',howToContribute:'Donate equipment or funds; volunteer with the loan closet; share the resource with people who may need equipment.',philosophicalArchetypes:['Community Builder','Coordinator'],volunteerStyles:['The Coordinator','The Fixer','The Quiet Helper','The Caregiver'],circleOfInfluence:'Health, Well-Being, Safety, and Crisis Support'},
+  {name:'Ark Valley Equality Coalition',website:'https://www.arkvalleyequalitynetwork.org',phone:'719-221-7044',email:'',description:'Support, advocacy, and community building for LGBTQ+ residents.',services:'LGBTQIA+ support, education, and advocacy in the Upper Arkansas River Valley; community-building events and programming.',communityImpact:'Strengthens LGBTQIA+ belonging and safety in a rural community through advocacy, education, and visibility.',howToContribute:'Volunteer at events; donate via local partner funds; become an affirming business; attend and share community events.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Connector','The Visionary','The Caregiver','The Coordinator','The Policy Nerd'],circleOfInfluence:'Inclusion, Community Support, Advocacy'},
+  {name:'Ark Valley Helping Hands',website:'https://www.arkvalley.helpfulvillage.com',phone:'719-530-1198',email:'info@avhelpinghands.org',description:'Nonprofit that serves older adults through vetted volunteers.',services:'Volunteer services for older adults 50+: friendly visits, rides to appointments, grocery/errands, yard work, handy services, light cleaning, snow shoveling.',communityImpact:'Helps older adults remain independent and connected; reduces isolation through neighbor-to-neighbor support.',howToContribute:'Volunteer (rides/visits/yardwork/handy help); donate; refer older adults; share volunteer opportunities.',philosophicalArchetypes:['Community Builder','Coordinator'],volunteerStyles:['The Coordinator','The Fixer','The Caregiver','The Quiet Helper','The Connector'],circleOfInfluence:'Community Development, Philanthropy, and Collaboration'},
+  {name:'Ark Valley Humane Society',website:'https://www.arkvalleyhumane.org',phone:'719-395-2737',email:'info@ark-valley.org',description:'Mission: Ensuring the welfare of companion animals through compassion and care.',services:'Animal sheltering and adoptions; stray reclaim/drop-off; pet relinquishment support; community programs including spay/neuter assistance.',communityImpact:'Supports animal welfare across Chaffee County with sheltering and rehoming; provides accessible community assistance.',howToContribute:'Adopt or foster; volunteer (dogs/cats, events, transport, chores); donate funds or supplies; host a donation drive.',philosophicalArchetypes:['Community Builder'],volunteerStyles:['The Fixer','The Quiet Helper','The Coordinator','The Caregiver','The Connector'],circleOfInfluence:'Basic Needs'},
+  {name:'Arkansas Headwaters Recreation Area (AHRA)',website:'https://cpw.state.co.us/placestogo/parks/ArkansasHeadwaters',phone:'719-539-7289',email:'arkansas.headwaters@state.co.us',description:'Colorado Parks and Wildlife manages 152 miles of the Arkansas River corridor for recreation, conservation, and public access.',services:'River corridor recreation management; campground operations; fish and wildlife habitat stewardship; public education and interpretive programming.',communityImpact:'Anchors outdoor recreation economy in Chaffee County; protects critical riparian habitat along the Arkansas River.',howToContribute:'Volunteer for stewardship projects; participate in public comment on management plans; support Friends of AHRA.',philosophicalArchetypes:['Systems Strategist','Community Builder'],volunteerStyles:['The Fixer','The Quiet Helper','The Connector','The Policy Nerd','The Visionary'],circleOfInfluence:'Environment, Conservation, and Agriculture'},
+  {name:'Arkansas Valley Christian Mission',website:'https://www.avcmbv.org',phone:'719-395-9321',email:'ark.christian.mission@gmail.com',description:'Provides food pantry, hot meals and basic need assistance.',services:'Free and confidential support: client pantry/groceries, employment resources, health care references, prescription co-pay assistance, emergency fuel vouchers.',communityImpact:'Provides direct basic-needs support to individuals/families in Buena Vista/Upper Arkansas Valley.',howToContribute:'Volunteer a few hours a month; donate food/supplies/funds; run a food drive; share hours/eligibility info.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Quiet Helper','The Caregiver','The Coordinator','The Connector'],circleOfInfluence:'Community connection'},
+  {name:'Avery Parsons Elementary School',website:'https://www.bvschools.org/page/avery-parsons-elementary',phone:'719-395-7020',email:'',description:'',services:'Public elementary school grades K-5 in Buena Vista School District; core academics plus family/school resources.',communityImpact:'Educates and supports local children/families in Buena Vista; anchors early learning and readiness for middle/high school.',howToContribute:'Volunteer through the school/PTO; donate classroom supplies or sponsor enrichment; participate in school events.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Coordinator','The Fixer'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'BETCH',website:'https://www.betchsalida.org',phone:'405-517-4494',email:'salty@betchsalida.org',description:'',services:'Housing-focused mutual aid and advocacy; rental subsidies for rent-burdened working households; Safe Outdoor Space with basic services; local emergency resource list.',communityImpact:'Provides direct stabilization (rental subsidies) for working households; supports unhoused neighbors using vehicles via Safe Outdoor Space; advances housing affordability awareness.',howToContribute:'Donate to support rental subsidies; volunteer on committees or help with outreach; share housing/emergency resources; participate in local housing discussions.',philosophicalArchetypes:['Equity Advocate','Community Builder','Systems Strategist'],volunteerStyles:['The Fixer','The Crisis Responder','The Visionary','The Caregiver','The Coordinator','The Policy Nerd'],circleOfInfluence:'Housing'},
+  {name:'Board of County Commissioners',website:'https://www.chaffeecounty.org/government/county_commissioners.php',phone:'719-539-2218',email:'commissioners@chaffeecounty.org',description:'',services:'County elected governing body: manages county affairs (budgeting, policies, infrastructure), conducts public hearings, guides county administration, and supports volunteer advisory boards/committees.',communityImpact:'Sets countywide direction affecting services, infrastructure, and quality of life; convenes public processes.',howToContribute:'Attend commissioner meetings/work sessions; submit public comment; apply to serve on county boards/committees.',philosophicalArchetypes:['Systems Strategist','Coordinator'],volunteerStyles:['The Policy Nerd','The Skeptic','The Connector','The Visionary'],circleOfInfluence:'Local Government and Law Enforcement'},
+  {name:'Boys and Girls Clubs of Chaffee County',website:'https://www.bgcchaffee.org',phone:'719-539-9500',email:'director@bgcchaffee.org',description:'Mission: Inspire and enable young people to reach their full potential.',services:'Youth development for ages 6-18 with after-school and summer programming; academic support, STEM programming, leadership development, and healthy snacks in Salida and Buena Vista.',communityImpact:'Serves hundreds of youth annually and supports graduation readiness; provides safe, supportive spaces and skill-building.',howToContribute:'Volunteer weekly; donate financially or provide in-kind expertise; sponsor/fundraise for the new Buena Vista club facility.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Fixer','The Caregiver','The Coordinator','The Connector','The Quiet Helper'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Buena Vista City Council',website:'https://www.buenavistava.org/city-services/government/city-council/meet-the-members/',phone:'719-395-8643',email:'',description:'',services:'Town legislative/policy-making body: enacts ordinances/resolutions, sets direction for town staff and services; holds regular public meetings.',communityImpact:'Guides municipal decision-making that shapes day-to-day services, long-range planning, and community investments.',howToContribute:'Attend Board of Trustees meetings; review agendas/packets; apply to serve on a town advisory board/commission.',philosophicalArchetypes:['Systems Strategist','Coordinator'],volunteerStyles:['The Policy Nerd','The Skeptic','The Connector','The Visionary'],circleOfInfluence:'Local Government and Law Enforcement'},
+  {name:'Buena Vista High School',website:'https://www.bvschools.org/',phone:'719-395-7109',email:'',description:'Mission: To ensure every student reaches the peak of success.',services:'Public high school BV School District R-31 serving grades 9-12; academics plus student supports; extracurriculars and athletics.',communityImpact:'Provides local secondary education and student supports that prepare teens for graduation, careers, and community leadership.',howToContribute:'Volunteer (coach, classroom help, mentoring, guest speaking); support booster/parent-group fundraisers; attend events/games.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Connector','The Caregiver','The Coordinator','The Fixer'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Buena Vista Middle School',website:'https://www.bvschools.org/',phone:'719-395-7060',email:'',description:'Mission: To ensure every student reaches the peak of success.',services:'Public middle school BV School District R-31 serving grades 6-8; athletics and activities; student safety and support resources.',communityImpact:'Supports early adolescence learning and belonging, helping students transition successfully into high school.',howToContribute:'Volunteer via school/parent channels; participate in fundraisers; offer time/skills as a mentor, tutor, or guest speaker.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Coordinator'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Buena Vista Pregnancy Center',website:'https://www.pregnancycenterbv.com',phone:'719-395-6703',email:'bvpc05@yahoo.com',description:'Support women, men, and families facing pregnancy decisions through education and compassionate care.',services:'Free pregnancy-related support services including pregnancy testing, limited ultrasounds, STI testing and treatment, and family services.',communityImpact:'Provides no-cost testing, education, and parenting/family support resources for people navigating pregnancy and early parenting.',howToContribute:'Donate funds or baby items; volunteer (client advocate, resource room/clothing sorting); share service info.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Caregiver','The Connector','The Quiet Helper','The Crisis Responder'],circleOfInfluence:'Health, Well-Being, Safety, and Crisis Support'},
+  {name:'Buena Vista School District',website:'https://www.bvschools.org/',phone:'719-395-7054',email:'',description:'',services:'Public school district serving about 1,000 students in Buena Vista; family/community resource hub and partnerships with local businesses.',communityImpact:'A major community anchor for education and youth development; connects students/families to resources and strengthens school-community ties.',howToContribute:'Volunteer (classroom help, tutoring, mentoring, coaching, guest speaking); partner as a local business; donate or sponsor school programs.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Coordinator','The Policy Nerd'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'BV Pride Coalition',website:'https://www.facebook.com/profile.php?id=61564341882758',phone:'',email:'bvpridecoalition@gmail.com',description:'Create safe, inclusive spaces and advocate for LGBTQ+ visibility and equity.',services:'LGBTQIA+ community-building and visibility work in and around Buena Vista, including regular gatherings and events; supports LGBTQIA+ youth and allies.',communityImpact:'Creates safer, more connected community spaces for LGBTQIA+ residents and builds local culture of inclusion.',howToContribute:'Attend and share events; volunteer at gatherings; donate/sponsor when fundraisers are offered; encourage affirming spaces.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Connector','The Caregiver','The Coordinator','The Visionary'],circleOfInfluence:'Inclusion, Community Support, Advocacy'},
+  {name:'Catholic Charities of Central Colorado',website:'https://www.ccharitiescc.org',phone:'719-636-2345',email:'',description:'Immigration legal services and financial stability programs.',services:'Wide-ranging stabilization services including Adult Services (case management, legal services, mail services, ID assistance, shelter referrals), Employment and Life Skills, Family Services, Food and Nutrition support, Mental Health/medical partner services, Immigration legal services, and Rent and Utility assistance.',communityImpact:'Large-scale safety-net impact across Central Colorado, supporting families and individuals toward stability and self-sufficiency.',howToContribute:'Volunteer; donate (general or to specific programs); refer clients to the appropriate intake/contact form by county.',philosophicalArchetypes:['Community Builder','Equity Advocate','Coordinator'],volunteerStyles:['The Coordinator','The Caregiver','The Connector','The Policy Nerd','The Quiet Helper'],circleOfInfluence:'Community connection'},
+  {name:'CCSURJ',website:'https://surj.org/chapter/central-colorado-surj/',phone:'',email:'centralcosurj@gmail.com',description:'Mission: Recognize role in white supremacy, dismantle systems of oppression, build anti-racist communities.',services:'Local chapter of SURJ focused on organizing and educating white people for racial and economic justice; community education and mobilizing efforts.',communityImpact:'Builds anti-racist community capacity through education and organizing in the central mountain region.',howToContribute:'Join events/trainings/actions; help with outreach/logistics; partner on community education.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Visionary','The Skeptic','The Connector','The Policy Nerd','The Coordinator'],circleOfInfluence:'Inclusion, Community Support, Advocacy'},
+  {name:'Center for Independence',website:'https://www.cfigj.org',phone:'970-241-0315',email:'',description:'Offers advocacy, information, peer mentoring and support for people with disabilities.',services:'Independent living center: peer counseling, personal systems advocacy, information and referral, support groups, transition support, classes/education, and benefits assistance.',communityImpact:'Helps people with disabilities live more independently and stay engaged in community life.',howToContribute:'Volunteer; donate; refer individuals/families who may benefit; partner as a community organization.',philosophicalArchetypes:['Equity Advocate','Capacity Builder'],volunteerStyles:['The Caregiver','The Connector','The Policy Nerd','The Coordinator'],circleOfInfluence:'Community connection'},
+  {name:'Chaffee Cares',website:'https://www.chaffeecares.org',phone:'',email:'chafeecares@gmail.com',description:'Helps local families with urgent needs unmet by other programs.',services:'Provides microgrants for urgent needs that fall through gaps in other programs; referral-based application via third-party professionals; quick turnaround paying vendors directly to protect client privacy.',communityImpact:'Offers fast, privacy-protecting gap funding for individuals/families facing urgent needs.',howToContribute:'Donate; share the program with helping professionals who can refer clients; volunteer/support their core operations.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Crisis Responder','The Quiet Helper','The Caregiver','The Connector'],circleOfInfluence:'Basic Needs'},
+  {name:'Chaffee Community Clinic',website:'https://www.chaffeecounty.org/departments/public_health/adult_health___aging_well/chaffee_community_clinic.php',phone:'719-221-0768',email:'health@chaffeecounty.org',description:'',services:'Walk-in, mobile medical and harm reduction clinic for residents who have trouble accessing care. Services include oral health screening, basic wound care, tobacco cessation, diabetes and cardiovascular screening, STI/HIV/Hep C testing, immunizations, insurance enrollment help, behavioral health navigation, needle/syringe disposal, Narcan and overdose education.',communityImpact:'Improves access to barrier-free care and prevention services; reduces overdose risk and infectious disease transmission; connects people to primary care and recovery resources.',howToContribute:'Share the clinic schedule and services with people who may benefit; partner as a provider receiving referrals.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Policy Nerd','The Crisis Responder'],circleOfInfluence:'Health, Well-Being, Safety, and Crisis Support'},
+  {name:'Chaffee County',website:'https://www.chaffeecounty.org',phone:'719-530-2562',email:'',description:'',services:'County government services (public health, human services/benefits, planning and zoning, roads/infrastructure, emergency management); posts public meetings/agendas and maintains boards/committees.',communityImpact:'Provides essential public services and sets countywide policy and budget priorities; expands capacity through citizen boards/committees.',howToContribute:'Attend/stream public meetings and submit public comment; apply to serve on boards/committees; subscribe to county updates.',philosophicalArchetypes:['Systems Strategist','Coordinator'],volunteerStyles:['The Policy Nerd','The Skeptic','The Connector','The Visionary'],circleOfInfluence:'Local Government and Law Enforcement'},
+  {name:'Chaffee County Behavioral Health Navigation',website:'https://www.chaffeecounty.org',phone:'719-530-2500',email:'',description:'Helps residents navigate behavioral health resources and services.',services:'Short-term, person-led support to help residents find the right behavioral health provider and navigate mental health/substance use services; connects people to crisis resources when needed.',communityImpact:'Helps residents match to appropriate counseling/treatment and reduces friction in accessing care in rural systems.',howToContribute:'Share navigation contact info with people seeking help; if a provider, coordinate with navigators for referrals and updated availability.',philosophicalArchetypes:['Coordinator','Equity Advocate'],volunteerStyles:['The Coordinator','The Crisis Responder','The Caregiver','The Connector','The Policy Nerd'],circleOfInfluence:'Health, Well-Being, Safety, and Crisis Support'},
+  {name:'Chaffee County Cattlemens Association',website:'',phone:'',email:'',description:'',services:'Represents ranching and agricultural interests in Chaffee County; advocates for working lands, water rights, and agricultural viability.',communityImpact:'Keeps working agricultural lands viable; advocates for ranching community interests in land-use and water policy.',howToContribute:'Community partners who understand working land stewardship; policy allies for water and land-use issues.',philosophicalArchetypes:['Systems Strategist','Community Builder'],volunteerStyles:['The Connector','The Policy Nerd','The Skeptic','The Visionary'],circleOfInfluence:'Environment, Conservation, and Agriculture'},
+  {name:'Chaffee County Community Foundation',website:'https://www.chaffeecommunity.org',phone:'719-204-5071',email:'hello@chaffeecommunity.org',description:'Vision: Resilient Chaffee where residents, nonprofits, businesses, governments thrive interconnectedly.',services:'Community foundation: grantmaking, nonprofit capacity-building, scholarships, giving tools (donor-advised funds), Chaffee VOLUNTEERS, Chaffee GIVES, and Emergency Response Fund.',communityImpact:'Funds and strengthens local nonprofits and initiatives through grantmaking; provides an organized way for residents to give/volunteer.',howToContribute:'Donate (general fund, ERF, or via donor-advised fund); volunteer through Chaffee VOLUNTEERS; participate in Chaffee GIVES.',philosophicalArchetypes:['Systems Strategist','Capacity Builder','Community Builder'],volunteerStyles:['The Connector','The Visionary','The Skeptic','The Coordinator','The Policy Nerd'],circleOfInfluence:'Community Development, Philanthropy, and Collaboration'},
+  {name:'Chaffee County Council on Aging',website:'https://www.chaffeecounty.org',phone:'719-530-2570',email:'',description:'Programs and resources supporting older adults and caregivers.',services:'Older-adult support and aging-in-place resources: nutrition and Meals-on-Wheels via the regional Area Agency on Aging; community aging-well initiatives.',communityImpact:'Helps older adults (typically 60+) stay healthier, more independent, and connected; improves food access and reduces isolation for homebound neighbors.',howToContribute:'Volunteer for meals, calls, visits, or advocacy roles; donate or sponsor senior supports; share resources with older adults/caregivers.',philosophicalArchetypes:['Community Builder','Coordinator'],volunteerStyles:['The Coordinator','The Caregiver','The Quiet Helper','The Fixer','The Connector'],circleOfInfluence:'Aging and Senior Support'},
+  {name:'Chaffee County Early Childhood Council',website:'https://www.chaffeecountyearlychildhood.org',phone:'719-530-2579',email:'',description:'Supports early childhood education, childcare access, and family resources.',services:'Nonprofit serving prenatal through age 8; supports families finding quality child care; connects families to mental health/parenting supports; promotes Universal Preschool and child-care financial resources.',communityImpact:'Strengthens school readiness and family stability by improving access to child care and early supports across Chaffee County.',howToContribute:'Donate or sponsor early childhood initiatives; partner as a provider or referral agency; share their child care and preschool resources with families.',philosophicalArchetypes:['Systems Strategist','Capacity Builder'],volunteerStyles:['The Policy Nerd','The Skeptic','The Coordinator','The Visionary','The Connector'],circleOfInfluence:'Local Government and Law Enforcement'},
+  {name:'Chaffee County Economic Development',website:'https://www.chaffeecounty.org',phone:'719-539-2218',email:'',description:'County-level economic development efforts to support business retention, expansion, and attraction; workforce development coordination.',services:'Business support and retention outreach; coordination with state economic development programs; workforce and employer convening; data and planning support.',communityImpact:'Strengthens the local business ecosystem and workforce pipeline; coordinates regional economic planning.',howToContribute:'Participate in economic development planning processes; share employer workforce needs; partner on workforce or business-support initiatives.',philosophicalArchetypes:['Systems Strategist','Capacity Builder'],volunteerStyles:['The Policy Nerd','The Visionary','The Skeptic','The Connector','The Coordinator'],circleOfInfluence:'Community Development, Philanthropy, and Collaboration'},
+  {name:'Chaffee County Family and Intercultural Resource Center (FIRC)',website:'https://www.chaffeefirc.org',phone:'719-539-5290',email:'',description:'Family support services including navigation, education, and crisis assistance.',services:'Family support services (navigation, education, and crisis assistance).',communityImpact:'Aims to strengthen family stability by helping residents navigate services, build skills, and access support during crises.',howToContribute:'Call to confirm current services and ask about volunteer/donation options; refer families who need navigation/support.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Connector','The Caregiver','The Policy Nerd','The Coordinator'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Chaffee County Government',website:'https://www.chaffeecounty.org',phone:'719-539-2218',email:'',description:'County programs and services including human services, public health, and housing.',services:'County government hub for departments and services (Human Services, Public Health, Road and Bridge, Sheriff, Planning, Clerk and Recorder, Emergency Management) plus public meetings/notices.',communityImpact:'Delivers essential local services and infrastructure, sets policy/budget priorities, and expands community voice through public processes.',howToContribute:'Attend meetings and submit public comment; apply to serve on a county board/committee; subscribe for county updates.',philosophicalArchetypes:['Systems Strategist','Coordinator'],volunteerStyles:['The Policy Nerd','The Skeptic','The Connector','The Visionary'],circleOfInfluence:'Local Government and Law Enforcement'},
+  {name:'Chaffee County High School',website:'https://www.bvschools.org/',phone:'719-395-5292',email:'',description:'Mission: To ensure every student reaches the peak of success.',services:'Alternative high school focused on helping students re-engage and graduate through targeted supports/interventions and a smaller-school setting.',communityImpact:'Creates a second-chance pathway to graduation and community participation for students who need a different approach than a traditional high school setting.',howToContribute:'Partner to offer internships/job shadowing; volunteer as a mentor/guest speaker; donate toward classroom/student resource needs.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Connector','The Caregiver','The Coordinator','The Fixer'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Chaffee County Hospitality',website:'https://www.chaffeehospitality.org',phone:'719-207-0541',email:'tom@salidapresbyterian.org',description:'Provides emergency winter shelter and motel stays for adults with children; runs seasonal shelters.',services:'Emergency winter shelter provider (typically November-April) offering a warm place to sleep and nightly hot meals; low-barrier shelters and connection to services; also helps fund motel rooms for families with children, people with pets, or those recovering from hospital stays.',communityImpact:'Operates the only winter shelters in Chaffee County and fills urgent shelter gaps during the coldest months.',howToContribute:'Donate; volunteer for meal support or other shelter roles; organize a community meal/donation drive; share seasonal shelter information.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Fixer','The Caregiver','The Crisis Responder','The Quiet Helper','The Coordinator'],circleOfInfluence:'Local Government and Law Enforcement'},
+  {name:'Chaffee County School District R31-J',website:'https://www.salidaschools.org',phone:'719-530-1000',email:'',description:'Public school district providing K-12 education and student support services.',services:'Salida School District K-12 serving multiple schools including Salida High School, Salida Middle School, Longfellow Elementary, Salida Early Childhood Center, Horizons Exploratory Academy, and The Crest Academy.',communityImpact:'Provides education, youth development, and community connection across Salida-area schools.',howToContribute:'Join the District Accountability Committee or a School Accountability Committee; volunteer through PTO/parent associations; attend school board/community meetings.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Coordinator','The Connector','The Policy Nerd','The Caregiver'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Chaffee County Social Services - Family and Youth Initiatives (FYI)',website:'https://www.chaffeecounty.org',phone:'719-530-2583',email:'chaffeeadmin@chaffeecounty.org',description:'',services:'Prevention division offering evidence-based programs for families, youth, and the community. Youth services include substance-use education, basic needs support, education/self-sufficiency supports, and a resource hub/closet. Family supports include 1-on-1 short-term support and economic/financial education. Community programs include mentoring (Chaffee County Mentors) and youth engagement.',communityImpact:'Builds protective factors for kids and families, strengthens parenting supports, reduces risk factors including substance use, and expands youth leadership/mentoring.',howToContribute:'Volunteer (mentor, parenting-class support, event help) or donate; partner as a community organization for referrals/resources.',philosophicalArchetypes:['Community Builder','Capacity Builder'],volunteerStyles:['The Caregiver','The Coordinator','The Connector','The Visionary'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Chaffee County Women Who Care (CCWWC)',website:'https://www.wecarechaffee.com',phone:'',email:'',description:'Empower women to create meaningful community impact through collective philanthropy.',services:'Local giving circle: members commit to donate 100 dollars each quarter to the nonprofit selected by majority vote at quarterly meetings; 100 percent of member donations go directly to the quarterly award recipient.',communityImpact:'Since launching in 2018, CCWWC has raised hundreds of thousands of dollars for local nonprofits and increases community awareness of nonprofit needs.',howToContribute:'Join as a member and commit to quarterly giving; volunteer at quarterly meetings; invite friends/colleagues.',philosophicalArchetypes:['Community Builder','Capacity Builder'],volunteerStyles:['The Coordinator','The Skeptic','The Connector','The Visionary'],circleOfInfluence:'Community Development, Philanthropy, and Collaboration'},
+  {name:'Chaffee Housing Trust / Chaffee Housing Authority',website:'https://www.chaffeehousingauthority.org',phone:'719-920-3497',email:'info@chaffeehousingauthority.org',description:'We catalyze affordable housing projects through partnerships, acquisition, and offering creative financing tools.',services:'Multi-jurisdictional housing authority (formed by Chaffee County, Salida, and Buena Vista) that builds/preserves affordable housing; manages income-qualified rentals; runs the Rental Deposit Guarantee Program (security deposit assistance via promissory note/payment plan).',communityImpact:'Expands and preserves long-term affordable/workforce housing and reduces barriers to entry; provides navigation so residents can access income-qualified rentals and deed-restricted homeownership options.',howToContribute:'Donate; if a landlord, consider renting long-term locally; refer renters/homebuyers to CHA resources; partner on projects or outreach.',philosophicalArchetypes:['Equity Advocate','Systems Strategist'],volunteerStyles:['The Policy Nerd','The Visionary','The Connector','The Caregiver'],circleOfInfluence:'Housing'},
+  {name:'Church of Ascension: Older Adult Meal Programs',website:'https://www.ascensionsalida.org/serving-in-the-community',phone:'719-539-3341',email:'',description:'Older adult meal programs in Salida.',services:'Older-adult nutrition support including grab-and-go meals for adults 60+ (Tue/Thu/Fri at noon, sign-up required) and support for Meals on Wheels/home-delivered meals.',communityImpact:'Improves food security and connection for older adults and homebound neighbors; contributes to community care by supporting winter shelter meals and local food ministry collections.',howToContribute:'Refer older adults who may benefit and help them sign up; volunteer with meal-related efforts; donate warming items/food as requested.',philosophicalArchetypes:['Community Builder'],volunteerStyles:['The Caregiver','The Quiet Helper','The Coordinator','The Fixer'],circleOfInfluence:'Community connection'},
+  {name:'City of Salida',website:'https://www.cityofsalida.com/',phone:'719-539-2303',email:'info@cityofsalida.com',description:'Council Mission: To guide the future of the City through thoughtful and inclusive decision-making.',services:'Municipal government services and public information hub; City Council meetings; departments like utilities, planning, parks and rec; volunteer on boards/commissions.',communityImpact:'Shapes local quality of life through city services, infrastructure, planning, recreation, and policy decisions.',howToContribute:'Attend City Council/board meetings; apply for a board/commission; subscribe to council agenda/packet updates and city newsletters.',philosophicalArchetypes:['Systems Strategist','Coordinator'],volunteerStyles:['The Policy Nerd','The Skeptic','The Connector','The Visionary'],circleOfInfluence:'Local Government and Law Enforcement'},
+  {name:'Colorado Enterprise Fund',website:'https://www.coloradoenterprisefund.org',phone:'303-860-0242',email:'info@coloradoenterprisefund.org',description:'Mission: To provide capital and support to small businesses and entrepreneurs who lack access to traditional financing, with a focus on underserved communities and rural Colorado.',services:'Small business loans (startup to expansion); technical assistance and business coaching; SBA microloan program; support for entrepreneurs in rural and underserved areas.',communityImpact:'Expands economic opportunity by providing capital to businesses that traditional banks cannot serve; supports job creation and entrepreneurship in rural communities.',howToContribute:'Refer small business owners who need financing; partner as a referral/co-lending organization; share resources with entrepreneurship networks.',philosophicalArchetypes:['Capacity Builder','Equity Advocate'],volunteerStyles:['The Connector','The Policy Nerd','The Visionary','The Coordinator'],circleOfInfluence:'Community Development, Philanthropy, and Collaboration'},
+  {name:'Colorado Farm to Table',website:'https://www.coloradofarmtotable.org',phone:'',email:'',description:'',services:'Nonprofit mission farm that grows, harvests, and distributes fresh vegetables at no cost to food banks, soup kitchens, pantries, and other hunger-relief partners; engages community members in volunteer farming experiences.',communityImpact:'Improves access to fresh, nutritious produce for families experiencing food insecurity across Colorado, while building hands-on community service opportunities.',howToContribute:'Volunteer on farm days/gleaning events; donate funds or in-kind items; join a committee or apply for board service.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Connector','The Fixer','The Visionary','The Coordinator'],circleOfInfluence:'Basic Needs'},
+  {name:'Colorado State University Extension',website:'https://chaffee.extension.colostate.edu/',phone:'719-539-6447',email:'chaffee@colostate.edu',description:'Mission: Empower Coloradans to address community issues via science-based education.',services:'Chaffee County CSU Extension office: research-based education and local programs in Agriculture, Horticulture, Family and Consumer Science, Natural Resources, and 4-H Youth Development.',communityImpact:'Brings research-based knowledge directly to Chaffee County residents; supports youth development through 4-H clubs meeting in Salida, Buena Vista, and Leadville.',howToContribute:'Volunteer with 4-H (club leader/mentor) or program support; participate in/host Extension workshops; share Extension resources.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Visionary','The Connector','The Policy Nerd'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Colorado Workforce Center - Buena Vista',website:'https://www.cdle.colorado.gov/wfc',phone:'719-395-1548',email:'',description:'Employment and training services for job seekers and employers.',services:'Job seeker and employer support: job listings, computer/internet access, career counseling and training connections, recruiting/prescreening/referrals, and information on incentives.',communityImpact:'Supports local employment and workforce stability by connecting residents to jobs and training, and helping employers recruit and retain talent.',howToContribute:'Employers: post openings and use recruiting support; individuals: use job search/counseling services and share with others.',philosophicalArchetypes:['Capacity Builder','Coordinator'],volunteerStyles:['The Coordinator','The Policy Nerd','The Connector','The Caregiver'],circleOfInfluence:'Community connection'},
+  {name:'ElevateHER',website:'https://www.elevateher.org',phone:'',email:'info@elevateher.org',description:'Mission: To inspire, educate, and connect women and girls to build economic independence.',services:'Programs supporting women and girls through professional development, mentorship, networking, and skill-building; scholarships and leadership programs.',communityImpact:'Builds economic independence and leadership capacity for women and girls in the region.',howToContribute:'Mentor a woman or girl in your field; sponsor a scholarship; attend or sponsor events; join a committee.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Connector','The Caregiver','The Visionary','The Coordinator'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Environment Colorado',website:'https://environmentcolorado.org',phone:'303-573-3871',email:'co@environmentcolorado.org',description:'Mission: To protect Colorados air, water, land, and climate for future generations.',services:'Policy advocacy and campaigns for clean energy, clean water, and public lands protection; grassroots organizing and citizen outreach.',communityImpact:'Advances environmental protections statewide through advocacy and public engagement.',howToContribute:'Sign petitions; join campaigns; attend rallies; donate; volunteer with outreach.',philosophicalArchetypes:['Systems Strategist','Equity Advocate'],volunteerStyles:['The Policy Nerd','The Skeptic','The Visionary','The Connector'],circleOfInfluence:'Environmental Stewardship'},
+  {name:'Faith Communities (Ecumenical)',website:'',phone:'',email:'',description:'Local faith communities across denominations working together for the common good.',services:'Community meals; emergency financial assistance; food/clothing drives; pastoral care; holiday programs; connecting people to services.',communityImpact:'Provides a safety net and sense of belonging for vulnerable community members through interfaith cooperation.',howToContribute:'Volunteer at community meals; donate goods or funds; connect neighbors in need to resources; join or start an interfaith initiative.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Caregiver','The Connector','The Fixer','The Coordinator'],circleOfInfluence:'Basic Needs'},
+  {name:'Fiber Arts',website:'',phone:'',email:'',description:'Local fiber arts groups and guilds that bring together crafters for community connection and creative skill-sharing.',services:'Knitting, weaving, spinning, and other fiber arts circles; skill sharing and teaching; community projects like blankets/scarves for donation.',communityImpact:'Builds community through creative expression and skill-sharing; produces donated goods for those in need.',howToContribute:'Join or start a fiber arts group; donate yarn or supplies; teach or learn a skill; contribute crafted goods to donation drives.',philosophicalArchetypes:['Community Builder','Capacity Builder'],volunteerStyles:['The Connector','The Caregiver','The Fixer'],circleOfInfluence:'Community connection'},
+  {name:'First Congregational United Church of Christ - Salida',website:'https://www.salidaucc.org',phone:'719-539-7636',email:'office@salidaucc.org',description:'Open and affirming congregation committed to justice, inclusion, and community care.',services:'Worship and community; social justice programs; community meals and outreach; emergency assistance; hosting community events and groups.',communityImpact:'Creates an inclusive spiritual home and supports community members in need through direct service and advocacy.',howToContribute:'Attend services or events; volunteer with outreach programs; donate to community fund; join a committee.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Caregiver','The Connector','The Fixer'],circleOfInfluence:'Basic Needs'},
+  {name:'Friends of the Monarch Trail',website:'https://www.monarchtrail.org',phone:'',email:'info@monarchtrail.org',description:'Dedicated to the preservation and stewardship of the Monarch Trail corridor.',services:'Trail maintenance and restoration; advocacy for trail preservation; community events and hikes; partnerships with land agencies.',communityImpact:'Protects and improves trail access and natural beauty for hikers, cyclists, and outdoor recreation enthusiasts.',howToContribute:'Volunteer for trail work days; donate; attend events; advocate for trail preservation.',philosophicalArchetypes:['Community Builder','Systems Strategist'],volunteerStyles:['The Fixer','The Connector','The Skeptic'],circleOfInfluence:'Environmental Stewardship'},
+  {name:'Chaffee County Public Health',website:'https://www.chaffeecounty.org/departments/public-health',phone:'719-539-4510',email:'publichealth@chaffeecounty.org',description:'Mission: To promote and protect the health and well-being of all people in Chaffee County.',services:'Immunizations and disease prevention; maternal and child health; environmental health; emergency preparedness; public health education and outreach.',communityImpact:'Protects community health through prevention, education, and emergency response services.',howToContribute:'Volunteer with public health programs; attend community health events; share public health resources; support emergency preparedness.',philosophicalArchetypes:['Systems Strategist','Equity Advocate'],volunteerStyles:['The Policy Nerd','The Caregiver','The Coordinator','The Skeptic'],circleOfInfluence:'Health and Wellness'},
+  {name:'Guardians Riders',website:'',phone:'',email:'',description:'Local motorcycle riding group that organizes charity rides and community service activities.',services:'Charity motorcycle rides; fundraising for local causes; community visibility and advocacy; supporting veterans and families in need.',communityImpact:'Raises funds and awareness for community causes while building camaraderie among riders.',howToContribute:'Join a charity ride; volunteer at events; donate to supported causes; help organize community rides.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Connector','The Fixer','The Caregiver'],circleOfInfluence:'Community connection'},
+  {name:'Heart of the Rockies Regional Medical Center',website:'https://www.hrrmc.com',phone:'719-530-2200',email:'info@hrrmc.com',description:'Mission: To improve the health and well-being of the communities we serve.',services:'Acute care, emergency services, surgical services, imaging, rehab, behavioral health, and community wellness programs; volunteer program.',communityImpact:'Provides critical health care services and community wellness programs for Chaffee County and surrounding areas.',howToContribute:'Volunteer with patient services, events, or auxiliary; donate to foundation; participate in community wellness programs.',philosophicalArchetypes:['Systems Strategist','Capacity Builder'],volunteerStyles:['The Caregiver','The Coordinator','The Fixer','The Policy Nerd'],circleOfInfluence:'Health and Wellness'},
+  {name:'High Country Conservation Center',website:'https://www.highcountryconservation.org',phone:'970-668-5703',email:'info@highcountryconservation.org',description:'Mission: To preserve the natural environment and enhance the quality of life in mountain communities.',services:'Recycling and waste diversion; energy efficiency programs; electric vehicle outreach; community education and events; policy advocacy.',communityImpact:'Reduces waste and carbon footprint in mountain communities through education, programs, and advocacy.',howToContribute:'Volunteer at events or programs; reduce, reuse, recycle; attend workshops; donate; advocate for sustainability.',philosophicalArchetypes:['Systems Strategist','Capacity Builder'],volunteerStyles:['The Policy Nerd','The Skeptic','The Fixer','The Connector'],circleOfInfluence:'Environmental Stewardship'},
+  {name:'Horizons Chaffee County',website:'https://www.horizonschaffeecounty.org',phone:'719-539-7341',email:'info@horizonschaffeecounty.org',description:'Mission: Creating opportunities and reducing poverty in Chaffee County.',services:'Emergency financial assistance; utility and housing support; food assistance; Head Start early childhood education; senior services; volunteer income tax assistance.',communityImpact:'Reduces poverty and builds self-sufficiency for low-income families and individuals through direct assistance and education.',howToContribute:'Volunteer with VITA tax prep or Head Start; donate funds or goods; refer people to services; join fundraising events.',philosophicalArchetypes:['Equity Advocate','Capacity Builder'],volunteerStyles:['The Caregiver','The Fixer','The Coordinator','The Policy Nerd'],circleOfInfluence:'Basic Needs'},
+  {name:'Housing Solutions of the San Luis Valley',website:'https://www.housingsolutionsslv.org',phone:'719-589-1680',email:'info@housingsolutionsslv.org',description:'Mission: To provide safe, decent, and affordable housing for low-income individuals and families.',services:'Affordable housing development and management; housing counseling; down payment assistance; homeless prevention; Section 8 voucher administration.',communityImpact:'Expands affordable housing access and helps families achieve housing stability in the San Luis Valley region.',howToContribute:'Volunteer at events; donate to housing fund; advocate for affordable housing policies; refer people seeking housing assistance.',philosophicalArchetypes:['Equity Advocate','Systems Strategist'],volunteerStyles:['The Policy Nerd','The Caregiver','The Visionary','The Connector'],circleOfInfluence:'Housing and Shelter'},
+  {name:'Chaffee County Food Pantry',website:'https://www.chaffeecountyfoodpantry.org',phone:'',email:'chaffeecountyfoodpantry@gmail.com',description:'Provides food assistance to Chaffee County residents experiencing food insecurity.',services:'Monthly food distributions; emergency food boxes; fresh produce when available; referrals to other community resources.',communityImpact:'Reduces hunger and food insecurity for individuals and families throughout Chaffee County.',howToContribute:'Volunteer at distributions; donate food or funds; spread the word; help with logistics and sorting.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Fixer','The Caregiver','The Connector','The Coordinator'],circleOfInfluence:'Basic Needs'},
+  {name:'Inclusion Connection',website:'https://www.inclusionconnection.org',phone:'',email:'info@inclusionconnection.org',description:'Mission: To promote inclusion and belonging for people with disabilities in the community.',services:'Disability awareness and education; inclusion consulting; support for individuals and families navigating disability services; community building events.',communityImpact:'Promotes full participation and belonging for people with disabilities through education, advocacy, and community connections.',howToContribute:'Volunteer as an inclusion ally; donate; attend awareness events; advocate for accessible spaces and policies.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Policy Nerd','The Skeptic'],circleOfInfluence:'Community connection'},
+  {name:'Integrated Community',website:'https://www.integratedcommunity.org',phone:'719-539-2468',email:'info@integratedcommunity.org',description:'Mission: To provide support and opportunities for adults with developmental disabilities to live, work, and thrive in the community.',services:'Day programs; employment support; residential services; recreational activities; family support and respite; community integration.',communityImpact:'Enables adults with developmental disabilities to live independently and participate fully in Chaffee County community life.',howToContribute:'Volunteer with activities and events; donate; advocate for inclusion; apply as staff or intern; share resources with families.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Caregiver','The Fixer','The Connector','The Coordinator'],circleOfInfluence:'Health and Wellness'},
+  {name:'Jewish Family Service of Colorado',website:'https://www.jewishfamilyservice.org',phone:'303-597-5000',email:'info@jewishfamilyservice.org',description:'Mission: To provide essential human services to strengthen lives, families, and communities.',services:'Mental health counseling; refugee resettlement; senior services; food assistance; employment support; disability services; Holocaust survivor support.',communityImpact:'Provides a safety net of essential services for vulnerable individuals and families regardless of religion or background.',howToContribute:'Volunteer with refugee programs or senior services; donate; advocate for vulnerable populations; participate in events.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Fixer','The Policy Nerd'],circleOfInfluence:'Basic Needs'},
+  {name:'Kids Need to Read',website:'https://www.kidsneedtoread.org',phone:'602-266-8490',email:'info@kidsneedtoread.org',description:'Mission: To foster a love of reading and provide books to underfunded schools, libraries, and organizations.',services:'Book donations and literacy programs; school and library grants; reading promotion campaigns; volunteer opportunities.',communityImpact:'Improves childhood literacy and access to books for children in underserved communities.',howToContribute:'Donate books or funds; volunteer with book drives; organize reading events; apply for a book grant for your school.',philosophicalArchetypes:['Equity Advocate','Capacity Builder'],volunteerStyles:['The Connector','The Caregiver','The Fixer'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Lake County Community Resource Center',website:'https://www.lakecountycrc.org',phone:'719-486-2748',email:'info@lakecountycrc.org',description:'Mission: To strengthen Lake County through services that promote individual and family self-sufficiency.',services:'Food bank; emergency assistance; housing support; early childhood programs; ESL classes; after-school programs; community health promoters.',communityImpact:'Addresses basic needs and builds long-term self-sufficiency for Lake County residents.',howToContribute:'Volunteer at food bank or programs; donate funds or goods; spread awareness; advocate for community resources.',philosophicalArchetypes:['Equity Advocate','Capacity Builder'],volunteerStyles:['The Caregiver','The Fixer','The Coordinator','The Connector'],circleOfInfluence:'Basic Needs'},
+  {name:'Lake County School District',website:'https://www.lakecountyschools.net',phone:'719-486-6800',email:'info@lakecountyschools.net',description:'Mission: To prepare students for success in college, career, and life.',services:'K-12 public education; special education; after-school programs; community school model; family engagement; dual enrollment; STEM programs.',communityImpact:'Prepares the next generation of Lake County residents through quality education and wraparound student support.',howToContribute:'Volunteer in classrooms or with programs; mentor a student; donate supplies; attend school board meetings; support parent engagement.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Coordinator','The Policy Nerd'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Leadership Chaffee County',website:'https://www.leadershiplcc.org',phone:'',email:'info@leadershiplcc.org',description:'Mission: To develop local leaders who will shape the future of Chaffee County.',services:'Leadership development program for local professionals; civic education and community immersion; networking; alumni community.',communityImpact:'Builds a pipeline of engaged, informed local leaders connected to community issues and organizations.',howToContribute:'Apply to the leadership program; support as a community presenter or sponsor; hire or mentor program graduates.',philosophicalArchetypes:['Community Builder','Systems Strategist'],volunteerStyles:['The Visionary','The Connector','The Policy Nerd','The Coordinator'],circleOfInfluence:'Community connection'},
+  {name:'Lighthouse Recovery',website:'https://www.lighthouserecovery.org',phone:'',email:'info@lighthouserecovery.org',description:'Providing peer support and recovery resources for individuals facing substance use challenges.',services:'Peer recovery coaching; support groups; sober social events; connection to treatment resources; family support.',communityImpact:'Reduces isolation and supports sustained recovery for individuals and families affected by substance use disorders.',howToContribute:'Volunteer as a peer coach; share recovery resources; donate; advocate for recovery-friendly policies.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Skeptic','The Fixer'],circleOfInfluence:'Health and Wellness'},
+  {name:'Limestone Climbing Club',website:'',phone:'',email:'',description:'Community organization for rock climbing enthusiasts promoting access, safety, and stewardship.',services:'Group climbing trips and clinics; route maintenance and access advocacy; beginner instruction; community social events.',communityImpact:'Grows the climbing community and advocates for public land access while promoting safety and environmental stewardship.',howToContribute:'Join a club trip or clinic; volunteer for trail or route maintenance; donate to access fund; mentor new climbers.',philosophicalArchetypes:['Community Builder','Systems Strategist'],volunteerStyles:['The Fixer','The Connector','The Skeptic'],circleOfInfluence:'Environmental Stewardship'},
+  {name:'Monarch Mountain',website:'https://www.skimonarch.com',phone:'719-539-3573',email:'info@skimonarch.com',description:'A family-owned ski area dedicated to providing affordable mountain experiences for all.',services:'Downhill skiing and snowboarding; adaptive skiing programs; community ski days; youth programs; volunteer patrol.',communityImpact:'Provides accessible outdoor recreation and adaptive sports opportunities for community members of all abilities.',howToContribute:'Volunteer with ski patrol; support adaptive ski programs; donate to scholarship fund; participate in community events.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Fixer','The Caregiver','The Connector'],circleOfInfluence:'Environmental Stewardship'},
+  {name:'Mountain Arts and Sciences Program',website:'https://www.maspschool.org',phone:'719-539-6600',email:'info@maspschool.org',description:'Mission: To provide a rigorous and experiential education that connects learning to the natural world and community.',services:'K-8 charter school; project-based learning; outdoor education; arts integration; community partnerships; after-school programs.',communityImpact:'Develops critical thinkers and engaged community members through experiential, place-based education.',howToContribute:'Volunteer in classrooms or with outdoor programs; donate supplies or funds; mentor students; support school events.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Connector','The Visionary','The Caregiver','The Fixer'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Mountain Mail',website:'https://www.themountainmail.com',phone:'719-539-6691',email:'news@themountainmail.com',description:'The local newspaper serving Chaffee County with community news, events, and information since 1880.',services:'Local news coverage; community event listings; business advertising; letters to the editor; public notices.',communityImpact:'Keeps the community informed on local issues, events, and government, supporting civic engagement and accountability.',howToContribute:'Subscribe and read; submit letters to the editor; advertise local events; support local journalism; submit news tips.',philosophicalArchetypes:['Systems Strategist','Community Builder'],volunteerStyles:['The Policy Nerd','The Skeptic','The Connector','The Visionary'],circleOfInfluence:'Community connection'},
+  {name:'Mountain Roots Food Project',website:'https://www.mountainrootsfood.org',phone:'719-221-1223',email:'info@mountainrootsfood.org',description:'Mission: Building a resilient local food system that nourishes our community and strengthens our connection to the land.',services:'Community garden; school garden programs; Food Access program; community kitchen; food preservation workshops; seed library; farm-to-school.',communityImpact:'Increases local food production and access, builds food literacy, and connects community members to sustainable food systems.',howToContribute:'Volunteer in community gardens or school programs; donate seeds, tools, or funds; take a workshop; join the CSA or food access program.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Fixer','The Caregiver','The Connector','The Visionary'],circleOfInfluence:'Basic Needs'},
+  {name:'Neighbor to Neighbor',website:'https://www.n2ncolorado.org',phone:'970-484-7498',email:'info@n2ncolorado.org',description:'Mission: Empowering northern Coloradans to find, keep, and enhance their housing.',services:'Housing counseling; rental assistance; foreclosure prevention; eviction mediation; homebuyer education; shelter services.',communityImpact:'Prevents homelessness and helps families achieve and maintain housing stability across Colorado.',howToContribute:'Volunteer as a housing counselor; donate; advocate for affordable housing policies; refer people in housing crisis.',philosophicalArchetypes:['Equity Advocate','Systems Strategist'],volunteerStyles:['The Caregiver','The Policy Nerd','The Fixer','The Coordinator'],circleOfInfluence:'Housing and Shelter'},
+  {name:'Passport to Adventure',website:'',phone:'',email:'',description:'Program connecting youth from underserved communities to outdoor recreation and nature experiences.',services:'Guided outdoor adventures; scholarships for outdoor programs; mentorship; equipment lending; nature education.',communityImpact:'Breaks down barriers to outdoor recreation for youth, building confidence, skills, and connection to nature.',howToContribute:'Volunteer as a trip leader or mentor; donate funds or gear; help with logistics; spread the word.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Fixer','The Visionary'],circleOfInfluence:'Environmental Stewardship'},
+  {name:'People Who Care',website:'',phone:'719-530-0568',email:'peoplewhocare@gmail.com',description:'A volunteer-driven network connecting Chaffee County residents with transportation assistance and community support.',services:'Volunteer driver program for medical appointments and essential errands; connection to community resources; neighbor-to-neighbor support.',communityImpact:'Reduces isolation and transportation barriers for elderly, disabled, and low-income residents.',howToContribute:'Sign up as a volunteer driver; donate to cover transportation costs; refer people who need rides; organize drive campaigns.',philosophicalArchetypes:['Community Builder','Equity Advocate'],volunteerStyles:['The Caregiver','The Fixer','The Connector'],circleOfInfluence:'Ride and Delivery Services'},
+  {name:'Poncha Springs Farmers Market',website:'',phone:'',email:'',description:'Local farmers market connecting community members with locally grown food and artisan products.',services:'Weekly market with local produce, meats, dairy, and artisan goods; community gathering; SNAP/EBT acceptance; special events.',communityImpact:'Supports local agriculture, expands access to fresh food, and creates a community gathering place.',howToContribute:'Volunteer at the market; shop and bring friends; donate to SNAP matching programs; become a vendor.',philosophicalArchetypes:['Community Builder','Capacity Builder'],volunteerStyles:['The Connector','The Fixer','The Caregiver'],circleOfInfluence:'Basic Needs'},
+  {name:'Project Salida',website:'https://www.projectsalida.org',phone:'',email:'info@projectsalida.org',description:'Mission: Building community through art, culture, and creative placemaking in Salida.',services:'Public art installations; community murals; arts events and festivals; creative placemaking initiatives; artist support programs.',communityImpact:'Transforms public spaces and builds community identity through collaborative art and cultural programming.',howToContribute:'Volunteer with art installations or events; submit artwork proposals; donate; attend and share events.',philosophicalArchetypes:['Community Builder','Systems Strategist'],volunteerStyles:['The Visionary','The Connector','The Fixer','The Coordinator'],circleOfInfluence:'Community connection'},
+  {name:'Radio Adventure Club',website:'',phone:'',email:'',description:'Amateur radio operators club promoting emergency communications and community connectivity.',services:'Amateur radio training and licensing; emergency communications support; community events; public service communications.',communityImpact:'Provides backup emergency communications infrastructure and builds technical skills among community members.',howToContribute:'Get your ham radio license; join the club; volunteer for emergency communications; support community events.',philosophicalArchetypes:['Systems Strategist','Community Builder'],volunteerStyles:['The Skeptic','The Fixer','The Coordinator','The Policy Nerd'],circleOfInfluence:'Community connection'},
+  {name:'Rooftop Rodeo',website:'https://www.rooftoprodeo.com',phone:'719-539-2082',email:'info@rooftoprodeo.com',description:'Annual professional rodeo celebrating the heritage and culture of the West in Salida, Colorado.',services:'Professional rodeo events; community festival; western heritage programming; youth rodeo events; volunteer opportunities.',communityImpact:'Celebrates local heritage, draws regional visitors, and builds community pride through an annual tradition.',howToContribute:'Volunteer at the rodeo; sponsor or donate; attend and bring friends; help with community outreach.',philosophicalArchetypes:['Community Builder','Coordinator'],volunteerStyles:['The Coordinator','The Connector','The Fixer'],circleOfInfluence:'Community connection'},
+  {name:'Rotary Club of Salida',website:'https://www.rotary.org',phone:'',email:'salidacrotary@gmail.com',description:'Service above self: local and international community service through the Rotary network.',services:'Community service projects; youth programs (Interact, RYLA); scholarships; vocational training; international projects; fundraising for local causes.',communityImpact:'Addresses local and global needs through member-led service projects, scholarships, and community engagement.',howToContribute:'Join or sponsor a Rotary project; apply for a scholarship; attend a meeting; volunteer with youth programs.',philosophicalArchetypes:['Community Builder','Capacity Builder'],volunteerStyles:['The Connector','The Coordinator','The Visionary','The Caregiver'],circleOfInfluence:'Community connection'},
+  {name:'Safe House Alliance',website:'https://www.safehousealliance.org',phone:'719-539-2350',email:'info@safehousealliance.org',description:'Mission: To end domestic violence and sexual assault through shelter, advocacy, and prevention in Chaffee County.',services:'Emergency shelter; 24-hour hotline; legal advocacy; counseling; children and youth programs; prevention education; community outreach.',communityImpact:'Provides lifesaving services to survivors of domestic violence and sexual assault while working to prevent future harm.',howToContribute:'Volunteer as a hotline advocate or shelter helper; donate essentials; host a drive; attend prevention trainings.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Caregiver','The Fixer','The Connector','The Policy Nerd'],circleOfInfluence:'Health and Wellness'},
+  {name:'Salida Art Walk',website:'https://www.salidaartwalks.com',phone:'',email:'info@salidaartwalks.com',description:'Monthly gallery walks celebrating local artists and bringing the community together through visual arts.',services:'Monthly evening gallery walks; artist showcases; community events; arts promotion and economic support for local artists.',communityImpact:'Animates downtown Salida with art and builds community through shared cultural experiences.',howToContribute:'Volunteer to help coordinate; attend and bring friends; support local galleries and artists; sponsor an event.',philosophicalArchetypes:['Community Builder','Systems Strategist'],volunteerStyles:['The Connector','The Visionary','The Caregiver'],circleOfInfluence:'Community connection'},
+  {name:'Salida City Farmers Market',website:'https://www.salidafarmersmarket.org',phone:'',email:'market@salidafarmersmarket.org',description:'Weekly outdoor market connecting the community with local farmers, producers, and artisans.',services:'Fresh local produce, meats, dairy, eggs, and artisan goods; live music; SNAP/EBT acceptance; special seasonal events.',communityImpact:'Supports local food producers and expands access to fresh local food for the Salida community.',howToContribute:'Volunteer at the market; shop and bring others; become a vendor; donate to food access programs.',philosophicalArchetypes:['Community Builder','Capacity Builder'],volunteerStyles:['The Connector','The Fixer','The Caregiver'],circleOfInfluence:'Basic Needs'},
+  {name:'Salida High School',website:'https://www.salida.k12.co.us/shs',phone:'719-539-4834',email:'office@salida.k12.co.us',description:'Comprehensive high school serving Chaffee County youth with academic, extracurricular, and community programs.',services:'K-12 college prep education; STEM and arts programs; athletics; dual enrollment; mentorship; internship connections.',communityImpact:'Prepares Chaffee County students for college and career while fostering civic responsibility and community connection.',howToContribute:'Mentor or tutor students; volunteer with extracurriculars; donate supplies; speak to classes about careers; support school events.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Coordinator','The Visionary'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Salida Human Services',website:'https://www.chaffeecounty.org/departments/human-services',phone:'719-539-6682',email:'humanservices@chaffeecounty.org',description:'County agency delivering state and federal human services programs to Chaffee County residents.',services:'Food assistance (SNAP); Medicaid; Colorado Works (TANF); child welfare; adult protection; energy assistance; child support services.',communityImpact:'Connects low-income and vulnerable Chaffee County residents to critical safety net programs and protective services.',howToContribute:'Volunteer with community outreach; refer people to services; advocate for human services funding; support community events.',philosophicalArchetypes:['Equity Advocate','Systems Strategist'],volunteerStyles:['The Caregiver','The Coordinator','The Policy Nerd','The Connector'],circleOfInfluence:'Basic Needs'},
+  {name:'Salida Sangha',website:'',phone:'',email:'info@salidasangha.org',description:'A community meditation group offering mindfulness practice and contemplative community in Salida.',services:'Weekly meditation sits; dharma talks; retreats; community discussions on mindfulness and wellbeing; free and donation-based offerings.',communityImpact:'Supports mental and emotional wellbeing through contemplative practice and creates a community of presence and connection.',howToContribute:'Attend a sitting; donate; volunteer with hospitality or events; share mindfulness resources with those who need it.',philosophicalArchetypes:['Community Builder','Capacity Builder'],volunteerStyles:['The Caregiver','The Skeptic','The Connector'],circleOfInfluence:'Health and Wellness'},
+  {name:'Salida School District',website:'https://www.salida.k12.co.us',phone:'719-539-4834',email:'superintendent@salida.k12.co.us',description:'Mission: To inspire and empower all students to realize their potential and become productive community members.',services:'K-12 public education; special education; English language learner programs; community school services; family resource center; before/after school care.',communityImpact:'Provides equitable, quality education and wraparound supports for all Chaffee County students and families.',howToContribute:'Volunteer in classrooms; serve on advisory committees; mentor; donate supplies; support family engagement events.',philosophicalArchetypes:['Capacity Builder','Community Builder'],volunteerStyles:['The Caregiver','The Connector','The Coordinator','The Policy Nerd'],circleOfInfluence:'Education, Youth, and Family Support'},
+  {name:'Sangre de Cristo Arts Center',website:'https://www.sdc-arts.org',phone:'719-295-7200',email:'info@sdc-arts.org',description:'Mission: To enrich the lives of those in the Pueblo region through the arts and education.',services:'Visual arts galleries; performing arts; children discovery center; arts education; community programs and events.',communityImpact:'Provides access to arts and culture for diverse audiences in southern Colorado, enriching community life.',howToContribute:'Volunteer at events; donate; attend exhibits and performances; support youth arts education; become a member.',philosophicalArchetypes:['Community Builder','Capacity Builder'],volunteerStyles:['The Visionary','The Connector','The Caregiver'],circleOfInfluence:'Community connection'},
+  {name:'Seniors on the Go',website:'',phone:'719-539-2507',email:'',description:'Transportation and activity programs keeping Chaffee County seniors connected, active, and independent.',services:'Senior transportation to appointments, errands, and social activities; senior center programming; wellness activities; meal programs.',communityImpact:'Reduces isolation and supports independence for older adults in Chaffee County.',howToContribute:'Volunteer as a driver or program helper; donate; spread the word to seniors who need support.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Caregiver','The Fixer','The Connector'],circleOfInfluence:'Ride and Delivery Services'},
+  {name:'Small Business Development Center',website:'https://www.coloradosbdc.org',phone:'719-589-3681',email:'sbdc@adams.edu',description:'Mission: To provide entrepreneurs and small businesses with no-cost consulting and low-cost training.',services:'Free one-on-one business advising; workshops on starting and growing a business; loan assistance; market research; export consulting.',communityImpact:'Supports local entrepreneurs and small businesses to start, grow, and sustain operations in the region.',howToContribute:'Volunteer as a subject matter expert or advisor; refer entrepreneurs; sponsor workshops; donate to business development funds.',philosophicalArchetypes:['Capacity Builder','Systems Strategist'],volunteerStyles:['The Coordinator','The Connector','The Policy Nerd','The Visionary'],circleOfInfluence:'Community Development, Philanthropy, and Collaboration'},
+  {name:'Solidarity Economy Network',website:'',phone:'',email:'',description:'A network promoting cooperative, democratic, and equitable economic models at the local level.',services:'Worker cooperative development; time banking; mutual aid coordination; community wealth-building education; networking events.',communityImpact:'Builds alternative economic structures that prioritize community wellbeing, equity, and democratic participation.',howToContribute:'Join a cooperative or mutual aid group; attend network events; donate; share skills through time banking; advocate for cooperative policies.',philosophicalArchetypes:['Equity Advocate','Systems Strategist'],volunteerStyles:['The Visionary','The Skeptic','The Policy Nerd','The Connector'],circleOfInfluence:'Community Development, Philanthropy, and Collaboration'},
+  {name:'South Central Behavioral Health',website:'https://www.scbhc.org',phone:'719-539-6502',email:'info@scbhc.org',description:'Mission: To improve the quality of life for individuals, families, and communities by providing comprehensive behavioral health services.',services:'Mental health counseling; substance use treatment; crisis services; psychiatric services; prevention programs; case management.',communityImpact:'Provides accessible behavioral health care for Chaffee County and surrounding region, reducing barriers to mental health treatment.',howToContribute:'Volunteer with community events or prevention programs; donate; advocate for mental health funding; refer people in need.',philosophicalArchetypes:['Equity Advocate','Systems Strategist'],volunteerStyles:['The Caregiver','The Policy Nerd','The Coordinator','The Skeptic'],circleOfInfluence:'Health and Wellness'},
+  {name:'Trails and Open Space Coalition',website:'https://www.tosc.org',phone:'719-633-6884',email:'info@tosc.org',description:'Mission: To protect and connect open spaces and trails for people and wildlife in Colorado.',services:'Trail advocacy and stewardship; open space protection; trail planning and funding; volunteer trail workdays; community education.',communityImpact:'Preserves natural spaces and expands trail access for recreation, wildlife, and community wellbeing.',howToContribute:'Volunteer on trail workdays; donate; advocate for trail funding; join stewardship committees.',philosophicalArchetypes:['Systems Strategist','Community Builder'],volunteerStyles:['The Fixer','The Skeptic','The Policy Nerd','The Connector'],circleOfInfluence:'Environmental Stewardship'},
+  {name:'We Are Chaffee',website:'https://www.wearechaffee.org',phone:'',email:'info@wearechaffee.org',description:'Mission: To foster an inclusive, welcoming community where everyone belongs in Chaffee County.',services:'Diversity, equity, and inclusion initiatives; community listening sessions; storytelling and arts projects; welcoming community framework; coalition building.',communityImpact:'Creates belonging and equity for all Chaffee County residents through inclusive programming, storytelling, and systemic change.',howToContribute:'Join a listening session or working group; share your story; volunteer with events; donate; advocate for inclusive policies.',philosophicalArchetypes:['Equity Advocate','Community Builder'],volunteerStyles:['The Connector','The Visionary','The Policy Nerd','The Skeptic'],circleOfInfluence:'Community connection'}
+];
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function escHtml(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function normPhilName(n){
+  if(!n) return "";
+  var s = n.trim().toLowerCase();
+  if(s === "equity advocate") return "guardian";
+  return s;
+}
+
+// ── Scoring ──────────────────────────────────────────────────────────────────
+function scorePhilosophical(){
+  var scores = {};
+  PHIL_ARCHETYPES.forEach(function(a){ if(a) scores[a.name.toLowerCase()] = 0; });
+  var lists = document.querySelectorAll(".phil-list");
+  lists.forEach(function(ul){
+    var items = ul.querySelectorAll("li.drag-item");
+    var n = items.length;
+    items.forEach(function(li, idx){
+      var archIdx = parseInt(li.getAttribute("data-archetype-index"), 10);
+      var arch = PHIL_ARCHETYPES[archIdx];
+      if(arch){
+        var pts = n - idx;
+        var key = arch.name.toLowerCase();
+        scores[key] = (scores[key]||0) + pts;
+      }
+    });
+  });
+  return scores;
+}
+
+function scoreVolunteer(){
+  var scores = {};
+  VOL_ARCHETYPES.forEach(function(a){ if(a) scores[a.name.toLowerCase()] = 0; });
+  var lists = document.querySelectorAll(".vol-list");
+  lists.forEach(function(ul){
+    var items = ul.querySelectorAll("li.drag-item");
+    var n = items.length;
+    items.forEach(function(li, idx){
+      var archIdx = parseInt(li.getAttribute("data-archetype-index"), 10);
+      var arch = VOL_ARCHETYPES[archIdx];
+      if(arch){
+        var pts = n - idx;
+        var key = arch.name.toLowerCase();
+        scores[key] = (scores[key]||0) + pts;
+      }
+    });
+  });
+  return scores;
+}
+
+// ── Org Matching ─────────────────────────────────────────────────────────────
+function matchOrgs(philScores, volScores, selectedAreas){
+  var philRanked = Object.keys(philScores).sort(function(a,b){return philScores[b]-philScores[a];});
+  var top3Phil = philRanked.slice(0,3);
+  var volRanked = Object.keys(volScores).sort(function(a,b){return volScores[b]-volScores[a];});
+  var topVol = volRanked[0];
+  return ORGS.map(function(org){
+    var philMatch = 0;
+    org.philosophicalArchetypes.forEach(function(pa){
+      var pn = normPhilName(pa);
+      if(top3Phil.indexOf(pn) !== -1) philMatch = 1;
+    });
+    var areas = getServiceAreas(org);
+    var areaMatch = 0;
+    selectedAreas.forEach(function(sa){
+      if(areas.indexOf(sa) !== -1) areaMatch = 1;
+    });
+    var volMatch = 0;
+    if(topVol){
+      org.volunteerStyles.forEach(function(vs){
+        if(vs.toLowerCase() === topVol) volMatch = 1;
+      });
+    }
+    return {org:org, overlapScore:philMatch+areaMatch+volMatch, philMatch:philMatch, areaMatch:areaMatch, volMatch:volMatch};
+  }).sort(function(a,b){
+    if(b.overlapScore !== a.overlapScore) return b.overlapScore - a.overlapScore;
+    return a.org.name.localeCompare(b.org.name);
+  });
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────────
+function renderPhilResults(scores){
+  var ranked = Object.keys(scores).sort(function(a,b){return scores[b]-scores[a];});
+  var top3 = ranked.slice(0,3);
+  var maxScore = scores[ranked[0]] || 1;
+  var html = "<h3>Your Philosophical Archetypes</h3>";
+  html += "<p class=\"result-subtitle\">Your top 3 guiding philosophies</p>";
+  top3.forEach(function(key, i){
+    var arch = null;
+    PHIL_ARCHETYPES.forEach(function(a){ if(a && a.name.toLowerCase()===key) arch=a; });
+    if(!arch) return;
+    var pct = Math.round((scores[key]/maxScore)*100);
+    html += "<div class=\"result-card\">";
+    html += "<div class=\"result-card-header\"><span class=\"result-rank\">"+(i+1)+"</span>";
+    html += "<h4>"+escHtml(arch.name)+"</h4></div>";
+    html += "<p class=\"archetype-tagline\">"+escHtml(arch.keywords||"")+"</p>";
+    html += "<div class=\"score-bar-wrap\"><div class=\"score-bar\" style=\"width:"+pct+"%\"></div></div>";
+    html += "<p class=\"score-label\">"+scores[key]+" pts ("+pct+"% of top score)</p>";
+    html += "<p class=\"archetype-desc\">"+escHtml(arch.youMightHelpBy||arch.superpower||"")+"</p>";
+    html += "<p class=\"activation\"><strong>Activation:</strong> "+escHtml(arch.activationPhrase)+"</p>";
+    html += "</div>";
+  });
+  document.getElementById("philResults").innerHTML = html;
+}
+
+function renderVolResults(scores){
+  var ranked = Object.keys(scores).sort(function(a,b){return scores[b]-scores[a];});
+  var topKey = ranked[0];
+  var arch = null;
+  VOL_ARCHETYPES.forEach(function(a){ if(a && a.name.toLowerCase()===topKey) arch=a; });
+  if(!arch) return;
+  var allVol = VOL_ARCHETYPES.filter(function(a){return !!a;});
+  var maxPossible = allVol.length * 10;
+  var pct = Math.round((scores[topKey]/maxPossible)*100);
+  var html = "<h3>Your Volunteer Style</h3>";
+  html += "<p class=\"result-subtitle\">How you show up best</p>";
+  html += "<div class=\"result-card result-card-vol\">";
+  html += "<h4>"+escHtml(arch.name)+"</h4>";
+  html += "<p class=\"archetype-tagline\">"+escHtml(arch.keywords||"")+"</p>";
+  html += "<div class=\"score-bar-wrap\"><div class=\"score-bar vol-bar\" style=\"width:"+pct+"%\"></div></div>";
+  html += "<p class=\"score-label\">"+scores[topKey]+" pts ("+pct+"% of max)</p>";
+  html += "<p class=\"archetype-desc\">"+escHtml(arch.youMightHelpBy||arch.superpower||"")+"</p>";
+  html += "<p class=\"activation\"><strong>Best fit:</strong> "+escHtml(arch.invitation||"")+"</p>";
+  html += "</div>";
+  document.getElementById("volResults").innerHTML = html;
+}
+
+function renderOrgCard(match, showBadges){
+  var org = match.org;
+  var html = "<div class=\"org-card\">";
+  html += "<div class=\"org-card-header\">";
+  html += "<h4>"+escHtml(org.name)+"</h4>";
+  if(showBadges){
+    html += "<div class=\"match-badges\">";
+    if(match.philMatch) html += "<span class=\"badge badge-phil\">Philosophy</span>";
+    if(match.areaMatch) html += "<span class=\"badge badge-area\">Area</span>";
+    if(match.volMatch) html += "<span class=\"badge badge-vol\">Style</span>";
+    html += "</div>";
+  }
+  html += "</div>";
+  if(org.description) html += "<p class=\"org-desc\">"+escHtml(org.description)+"</p>";
+  if(org.services) html += "<p><strong>Services:</strong> "+escHtml(org.services)+"</p>";
+  if(org.communityImpact) html += "<p><strong>Impact:</strong> "+escHtml(org.communityImpact)+"</p>";
+  if(org.howToContribute) html += "<p><strong>How to contribute:</strong> "+escHtml(org.howToContribute)+"</p>";
+  html += "<div class=\"org-links\">";
+  if(org.website) html += "<a href=\""+escHtml(org.website)+"\" target=\"_blank\" rel=\"noopener\">Website</a>";
+  if(org.phone) html += "<a href=\"tel:"+escHtml(org.phone)+"\">"+escHtml(org.phone)+"</a>";
+  if(org.email) html += "<a href=\"mailto:"+escHtml(org.email)+"\">Email</a>";
+  html += "</div>";
+  html += "</div>";
+  return html;
+}
+
+function renderOrgs(matches){
+  var top5 = matches.slice(0,5);
+  var rest = matches.slice(5);
+  var topHtml = "<h3>Your Top Organization Matches</h3>";
+  topHtml += "<p class=\"result-subtitle\">Based on your philosophy, volunteer style, and areas of interest</p>";
+  top5.forEach(function(m){ topHtml += renderOrgCard(m, true); });
+  document.getElementById("topOrgs").innerHTML = topHtml;
+  var restHtml = "";
+  rest.forEach(function(m){ restHtml += renderOrgCard(m, false); });
+  document.getElementById("remainingOrgs").innerHTML = restHtml;
+  document.getElementById("accordionCount").textContent = rest.length + " more organizations";
+}
+
+// ── Drag-and-Drop Engine ─────────────────────────────────────────────────────
+var dragState = null;
+var scrollRAF = null;
+
+function updateRanks(ul){
+  var items = ul.querySelectorAll("li.drag-item");
+  items.forEach(function(li, i){
+    var badge = li.querySelector(".rank-badge");
+    if(badge) badge.textContent = i + 1;
+  });
+}
+
+function announceOrder(ul){
+  var live = document.getElementById("drag-announce");
+  if(!live) return;
+  var items = ul.querySelectorAll("li.drag-item .item-text");
+  var names = Array.prototype.map.call(items, function(s){ return s.textContent; });
+  live.textContent = "Order: " + names.join(", ");
+}
+
+function getInsertIndex(ul, clientY, excludeEl){
+  var items = Array.prototype.slice.call(ul.querySelectorAll("li.drag-item")).filter(function(el){ return el !== excludeEl; });
+  for(var i=0; i<items.length; i++){
+    var rect = items[i].getBoundingClientRect();
+    if(clientY < rect.top + rect.height/2) return i;
+  }
+  return items.length;
+}
+
+function movePlaceholder(ul, idx){
+  var ph = dragState.placeholder;
+  var items = Array.prototype.slice.call(ul.querySelectorAll("li.drag-item"));
+  if(idx >= items.length){
+    ul.appendChild(ph);
+  } else {
+    ul.insertBefore(ph, items[idx]);
+  }
+}
+
+function startAutoScroll(){
+  if(scrollRAF) return;
+  function tick(){
+    if(!dragState){ scrollRAF = null; return; }
+    var y = dragState.currentY;
+    var threshold = 100;
+    var speed = 8;
+    var vh = window.innerHeight;
+    if(y < threshold){
+      window.scrollBy(0, -speed * (1 - y/threshold));
+    } else if(y > vh - threshold){
+      window.scrollBy(0, speed * (1 - (vh-y)/threshold));
+    }
+    scrollRAF = requestAnimationFrame(tick);
+  }
+  scrollRAF = requestAnimationFrame(tick);
+}
+
+function stopAutoScroll(){
+  if(scrollRAF){ cancelAnimationFrame(scrollRAF); scrollRAF = null; }
+}
+
+function onPointerDown(e){
+  var li = e.currentTarget.closest("li.drag-item");
+  if(!li) return;
+  var ul = li.parentElement;
+  // Only drag from handle or the item itself (not buttons)
+  if(e.target.classList.contains("move-btn")) return;
+  e.preventDefault();
+  li.setPointerCapture(e.pointerId);
+  var rect = li.getBoundingClientRect();
+  var clone = li.cloneNode(true);
+  clone.style.cssText = "position:fixed;left:"+rect.left+"px;top:"+rect.top+"px;width:"+rect.width+"px;opacity:0.85;pointer-events:none;z-index:9999;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.18);border-radius:8px;margin:0;";
+  document.body.appendChild(clone);
+  var ph = document.createElement("li");
+  ph.className = "drag-placeholder";
+  ph.style.height = rect.height + "px";
+  ul.insertBefore(ph, li);
+  li.style.display = "none";
+  dragState = {
+    li: li,
+    ul: ul,
+    clone: clone,
+    placeholder: ph,
+    startX: e.clientX,
+    startY: e.clientY,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    currentY: e.clientY
+  };
+  startAutoScroll();
+}
+
+function onPointerMove(e){
+  if(!dragState) return;
+  dragState.currentY = e.clientY;
+  var clone = dragState.clone;
+  clone.style.left = (e.clientX - dragState.offsetX) + "px";
+  clone.style.top = (e.clientY - dragState.offsetY) + "px";
+  var idx = getInsertIndex(dragState.ul, e.clientY, dragState.li);
+  movePlaceholder(dragState.ul, idx);
+}
+
+function onPointerUp(e){
+  if(!dragState) return;
+  stopAutoScroll();
+  var ul = dragState.ul;
+  var li = dragState.li;
+  var ph = dragState.placeholder;
+  var clone = dragState.clone;
+  ul.insertBefore(li, ph);
+  li.style.display = "";
+  ph.parentNode.removeChild(ph);
+  clone.parentNode.removeChild(clone);
+  dragState = null;
+  updateRanks(ul);
+  announceOrder(ul);
+}
+
+function onKeyDown(e){
+  var li = e.currentTarget;
+  var ul = li.parentElement;
+  var items = Array.prototype.slice.call(ul.querySelectorAll("li.drag-item"));
+  var idx = items.indexOf(li);
+  if(e.key === "ArrowUp" && idx > 0){
+    e.preventDefault();
+    ul.insertBefore(li, items[idx-1]);
+    updateRanks(ul);
+    announceOrder(ul);
+    li.focus();
+  } else if(e.key === "ArrowDown" && idx < items.length-1){
+    e.preventDefault();
+    ul.insertBefore(li, items[idx+2]);
+    updateRanks(ul);
+    announceOrder(ul);
+    li.focus();
+  }
+}
+
+function initDragList(ul){
+  var items = ul.querySelectorAll("li.drag-item");
+  items.forEach(function(li){
+    li.addEventListener("pointerdown", onPointerDown);
+    li.addEventListener("pointermove", onPointerMove);
+    li.addEventListener("pointerup", onPointerUp);
+    li.addEventListener("pointercancel", onPointerUp);
+    li.addEventListener("keydown", onKeyDown);
+    // Move Up / Move Down buttons
+    var btns = li.querySelectorAll(".move-btn");
+    if(btns.length >= 2){
+      btns[0].addEventListener("click", function(e){
+        e.stopPropagation();
+        var ulp = li.parentElement;
+        var its = Array.prototype.slice.call(ulp.querySelectorAll("li.drag-item"));
+        var i = its.indexOf(li);
+        if(i > 0){ ulp.insertBefore(li, its[i-1]); updateRanks(ulp); announceOrder(ulp); li.focus(); }
+      });
+      btns[1].addEventListener("click", function(e){
+        e.stopPropagation();
+        var ulp = li.parentElement;
+        var its = Array.prototype.slice.call(ulp.querySelectorAll("li.drag-item"));
+        var i = its.indexOf(li);
+        if(i < its.length-1){ ulp.insertBefore(li, its[i+2]); updateRanks(ulp); announceOrder(ulp); li.focus(); }
+      });
+    }
+  });
+}
+
+// ── Form Submit & Init ───────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function(){
+  // Init all drag lists
+  document.querySelectorAll(".drag-list").forEach(function(ul){
+    initDragList(ul);
+    updateRanks(ul);
+  });
+
+  // Form submit
+  var form = document.getElementById("sortingForm");
+  if(form){
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      // Validate at least one area selected
+      var checked = form.querySelectorAll("input[name=area]:checked");
+      if(checked.length === 0){
+        var err = document.getElementById("area-error");
+        if(err){ err.style.display = "block"; err.focus(); }
+        return;
+      }
+      var err = document.getElementById("area-error");
+      if(err) err.style.display = "none";
+      var selectedAreas = Array.prototype.map.call(checked, function(cb){ return cb.value; });
+      var philScores = scorePhilosophical();
+      var volScores = scoreVolunteer();
+      var matches = matchOrgs(philScores, volScores, selectedAreas);
+      renderPhilResults(philScores);
+      renderVolResults(volScores);
+      renderOrgs(matches);
+      var results = document.getElementById("results");
+      results.style.display = "block";
+      results.scrollIntoView({behavior:"smooth"});
+      form.style.display = "none";
+    });
+  }
+
+  // Restart button
+  var restartBtn = document.getElementById("restartBtn");
+  if(restartBtn){
+    restartBtn.addEventListener("click", function(){
+      var results = document.getElementById("results");
+      var form = document.getElementById("sortingForm");
+      results.style.display = "none";
+      form.style.display = "block";
+      form.reset();
+      document.querySelectorAll(".drag-list").forEach(function(ul){
+        updateRanks(ul);
+      });
+      form.scrollIntoView({behavior:"smooth"});
+    });
+  }
+
+  // Accordion toggle
+  var accordionBtn = document.getElementById("accordionToggle");
+  if(accordionBtn){
+    accordionBtn.addEventListener("click", function(){
+      var panel = document.getElementById("moreOrgsContent");
+      var isOpen = panel.style.display === "block";
+      panel.style.display = isOpen ? "none" : "block";
+      accordionBtn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+      var arrow = accordionBtn.querySelector(".accordion-arrow");
+      if(arrow) arrow.textContent = isOpen ? "▼" : "▲";
+    });
+  }
+
+  // Area checkbox validation live feedback
+  document.querySelectorAll("input[name=area]").forEach(function(cb){
+    cb.addEventListener("change", function(){
+      var anyChecked = document.querySelectorAll("input[name=area]:checked").length > 0;
+      var err = document.getElementById("area-error");
+      if(err && anyChecked) err.style.display = "none";
+    });
+  });
+});
+</script>
+</body>
+</html>
